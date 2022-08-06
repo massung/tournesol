@@ -1,17 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Calc.Defs where
+module Calc.Funcs where
 
 import Calc.Dims
 import Calc.Error
-import Calc.Parser
 import Calc.Scalar
 import Calc.Units hiding (_pi)
 import Control.Monad
-import Data.Foldable as F
 import Data.Map.Strict as M
 
 type Func = [Scalar] -> Either Error Scalar
+
 data Arg = Any | Typed Dims
 
 defMap =

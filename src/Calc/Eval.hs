@@ -1,8 +1,8 @@
 module Calc.Eval where
 
-import Calc.Defs
 import Calc.Error
 import Calc.Expr
+import Calc.Funcs
 import Calc.Scalar
 import Calc.Units
 import Control.Monad.Except

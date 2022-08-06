@@ -2,8 +2,8 @@
 
 module Calc.Expr where
 
-import Calc.Defs
 import Calc.Error
+import Calc.Funcs
 import Calc.Lexer
 import Calc.Parser
 import Calc.Scalar

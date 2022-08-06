@@ -5,10 +5,10 @@
 
 module Main where
 
-import Calc.Defs
 import Calc.Error
 import Calc.Eval
 import Calc.Expr
+import Calc.Funcs
 import Calc.Lexer
 import Calc.Parser
 import Calc.Scalar

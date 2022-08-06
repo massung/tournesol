@@ -2,11 +2,11 @@
 
 module Calc.Script where
 
-import Calc.Defs
 import Calc.Dims
 import Calc.Error
 import Calc.Eval
 import Calc.Expr
+import Calc.Funcs
 import Calc.Lexer
 import Calc.Parser
 import Calc.Units
