@@ -14,7 +14,7 @@ evalExpr :: Expr -> Eval Scalar
 evalExpr Answer = evalAnswer
 evalExpr (Term x) = return x
 evalExpr (Convert to x) = evalConvert x to
-evalExpr (Apply def xs) = evalCall def xs
+evalExpr (Call f xs) = evalCall f xs
 evalExpr (Unary f x) = evalUnary f x
 evalExpr (Binary f x y) = evalBinary f x y
 evalExpr (BinaryConv f x y) = evalBinaryConv f x y
@@ -34,10 +34,10 @@ evalConvert x to = do
   x' <- evalExpr x
   either throwError return $ convert x' to
 
-evalCall :: Def -> [Expr] -> Eval Scalar
-evalCall def xs = do
+evalCall :: Func -> [Expr] -> Eval Scalar
+evalCall f xs = do
   xs' <- sequence [evalExpr x | x <- xs]
-  either throwError return $ apply def xs'
+  either throwError return $ f xs'
 
 evalUnary :: (Scalar -> Scalar) -> Expr -> Eval Scalar
 evalUnary f (Term x) = return $ f x

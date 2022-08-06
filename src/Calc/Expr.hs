@@ -17,7 +17,7 @@ data Expr
   = Answer
   | Term Scalar
   | Convert Units Expr
-  | Apply Def [Expr]
+  | Call ([Scalar] -> Either Error Scalar) [Expr]
   | Unary (Scalar -> Scalar) Expr
   | Binary (Scalar -> Scalar -> Either Error Scalar) Expr Expr
   | BinaryConv (Scalar -> Scalar -> Either Error Scalar) Expr Expr
@@ -28,9 +28,9 @@ hasPlaceholder (Convert _ x) = hasPlaceholder x
 hasPlaceholder (Unary _ x) = hasPlaceholder x
 hasPlaceholder (Binary _ x y) = hasPlaceholder x || hasPlaceholder y
 hasPlaceholder (BinaryConv _ x y) = hasPlaceholder x || hasPlaceholder y
-hasPlaceholder (Apply _ xs) = any hasPlaceholder xs
+hasPlaceholder (Call _ xs) = any hasPlaceholder xs
 
-exprParser :: Parsec String (Map String Def) Expr
+exprParser :: Parsec String (Map String Func) Expr
 exprParser = buildExpressionParser exprTable exprTerm
 
 exprTerm =
@@ -61,11 +61,11 @@ exprCast = do
   unitsParser
 
 exprApply = do
-  defs <- getState
+  funcs <- getState
   s <- identifier lexer
   xs <- sepBy exprParser (lexeme lexer $ char ';')
-  case M.lookup s defs of
-    Just def -> return $ Apply def xs
+  case M.lookup s funcs of
+    Just f -> return $ Call f xs
     Nothing -> fail $ s ++ " ?"
 
 exprTable =

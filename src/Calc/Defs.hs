@@ -8,56 +8,49 @@ import Calc.Parser
 import Calc.Scalar
 import Calc.Units hiding (_pi)
 import Control.Monad
+import Data.Foldable as F
 import Data.Map.Strict as M
 
-data Def = Def ([Scalar] -> Either Error Scalar) [Arg]
-
-data Arg = None | Any | Typed Dims
+type Func = [Scalar] -> Either Error Scalar
+data Arg = Any | Typed Dims
 
 defMap =
   M.fromList
-    [ ("if", Def _if [Any, Any, Any]),
-      ("abs", Def _abs [Any]),
-      ("signum", Def _signum [Any]),
-      ("sqrt", Def _sqrt [Any]),
-      ("log", Def _log [None]),
-      ("exp", Def _exp [None]),
-      ("truncate", Def _truncate [Any]),
-      ("floor", Def _floor [Any]),
-      ("ceil", Def _ceiling [Any]),
-      ("round", Def _round [Any]),
-      ("pi", Def _pi []),
-      ("sin", Def _sin $ dims [Angle]),
-      ("cos", Def _cos $ dims [Angle]),
-      ("tan", Def _tan $ dims [Angle]),
-      ("sinh", Def _sinh $ dims [Angle]),
-      ("cosh", Def _cosh $ dims [Angle]),
-      ("tanh", Def _tanh $ dims [Angle]),
-      ("asin", Def _asin [None]),
-      ("acos", Def _acos [None]),
-      ("atan", Def _atan [None]),
-      ("asinh", Def _asinh [None]),
-      ("acosh", Def _acosh [None]),
-      ("atanh", Def _atanh [None])
+    [ ("if", func _if [Any, Any, Any]),
+      ("abs", func _abs [Any]),
+      ("signum", func _signum [Any]),
+      ("sqrt", func _sqrt [Any]),
+      ("log", func _log [Typed mempty]),
+      ("exp", func _exp [Typed mempty]),
+      ("truncate", func _truncate [Any]),
+      ("floor", func _floor [Any]),
+      ("ceil", func _ceiling [Any]),
+      ("round", func _round [Any]),
+      ("pi", func _pi []),
+      ("sin", func _sin $ dims [Angle]),
+      ("cos", func _cos $ dims [Angle]),
+      ("tan", func _tan $ dims [Angle]),
+      ("sinh", func _sinh $ dims [Angle]),
+      ("cosh", func _cosh $ dims [Angle]),
+      ("tanh", func _tanh $ dims [Angle]),
+      ("asin", func _asin [Typed mempty]),
+      ("acos", func _acos [Typed mempty]),
+      ("atan", func _atan [Typed mempty]),
+      ("asinh", func _asinh [Typed mempty]),
+      ("acosh", func _acosh [Typed mempty]),
+      ("atanh", func _atanh [Typed mempty])
     ]
   where
     dims xs = [Typed $ baseDims x | x <- xs]
 
-mapArgs = zipWithM mapArg
+func :: ([Scalar] -> Either Error Scalar) -> [Arg] -> ([Scalar] -> Either Error Scalar)
+func f args xs = zipWithM mapArg args xs >>= f
   where
-    mapArg x Any = Right x
-    mapArg x@(Scalar _ d _) None =
-      if nullDims d
-        then Right x
-        else Left $ WrongDims d mempty
-    mapArg x@(Scalar _ d _) (Typed dims) =
+    mapArg Any x = Right x
+    mapArg (Typed dims) x@(Scalar _ d _) =
       if d == dims
         then Right x
         else Left $ WrongDims d dims
-
-apply (Def func args) xs = case mapArgs xs args of
-  Right xs -> func xs
-  Left e -> Left e
 
 unaryDef f = fmap $ fromReal . f . fromRational . toRational
 

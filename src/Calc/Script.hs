@@ -14,26 +14,21 @@ import Control.Exception
 import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.FileEmbed
+import Data.Functor.Identity
 import Data.Map.Strict as M
 import Text.Parsec
 import Text.Parsec.Token
+import Calc.Scalar (Scalar)
 
-data Script = Script
-  { units :: Map String Units,
-    defs :: Map String Def
-  }
+type Funcs = Map String ([Scalar] -> Either Error Scalar)
 
-builtInDefs :: IO (Map String Def)
+builtInDefs :: IO Funcs
 builtInDefs = either (throw . ExprError) return $ loadScriptContents defMap "built-ins.tn" source
   where
     source = $(embedStringFile "scripts/functions.tn")
 
-scriptDef :: [Arg] -> Expr -> Def
-scriptDef args expr = Def f args
-  where
-    f xs = case mapArgs xs args of
-      Right xs -> evalState (runExceptT $ evalExpr expr) xs
-      Left e -> Left e
+scriptFunc :: [Arg] -> Expr -> Func
+scriptFunc args expr = func (evalState $ runExceptT $ evalExpr expr) args
 
 loadScripts defs [] = return defs
 loadScripts defs (path : rest) = loadScript defs path >>= (`loadScripts` rest)
@@ -42,24 +37,34 @@ loadScript defs path = do
   contents <- readFile path
   loadScriptContents defs path contents
 
-loadScriptContents defs path contents =
-  case runParser scriptParser defs path contents of
-    Right functions -> return $ union (M.fromList functions) defs
+loadScriptContents :: Monad m => Funcs -> SourceName -> String -> m Funcs
+loadScriptContents script path contents =
+  case runParser scriptParser script path contents of
+    Right script' -> return script'
     Left err -> throw $ ExprError err
 
 scriptParser = do
   whiteSpace lexer
-  functions <- many scriptFunction
+  skipMany (scriptUnits <|> scriptFunction)
   eof
-  return functions
+  getState
 
+scriptUnits = do
+  reserved lexer "units"
+  unit <- identifier lexer
+  reservedOp lexer "="
+  scalar <- scalarParser
+  return ()
+
+scriptFunction :: ParsecT String Funcs Identity ()
 scriptFunction = do
   reserved lexer "function"
   def <- identifier lexer
   args <- scriptArgs
   reservedOp lexer "="
   expr <- exprParser
-  return (def, scriptDef args expr)
+  let f = scriptFunc args
+   in updateState $ M.insert def (f expr)
 
 scriptArgs = brackets lexer (sepBy scriptArg $ lexeme lexer (char ';'))
 
@@ -69,7 +74,7 @@ scriptArg = do
   return arg
   where
     anyArg = do reserved lexer "any"; return Any
-    noneArg = do reserved lexer "none"; return None
+    noneArg = do reserved lexer "none"; return $ Typed mempty
     typedArg = do
       (dim, e) <- dimParser
       return $ Typed $ mapDims (* e) (baseDims dim)

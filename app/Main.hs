@@ -86,7 +86,7 @@ printAns opts x@(Scalar _ d u) =
     then printf (printFormat opts x ++ "\n") x >> return x
     else printf (printFormat opts x ++ " %U\n") x x >> return x
 
-parseExpr :: Map String Def -> String -> IO Expr
+parseExpr :: Map String Func -> String -> IO Expr
 parseExpr defs s = either throw return $ mapLeft ExprError $ runParser parser defs "" s
   where
     parser = do
@@ -106,7 +106,7 @@ parseCsvInputs opts = do
   fs <- lookupEnv "FS"
   parseInputs $ splitOn (fromMaybe "," $ delim opts <|> fs) input
 
-prompt :: Map String Def -> IO Expr
+prompt :: Map String Func -> IO Expr
 prompt defs = do
   putStr ">> "
   hFlush stdout
@@ -120,13 +120,13 @@ runExpr opts expr xs = either throw (printAns opts) result
   where
     result = evalState (runExceptT $ evalExpr expr) xs
 
-runEval :: Opts -> Map String Def -> [Scalar] -> IO Scalar
+runEval :: Opts -> Map String Func -> [Scalar] -> IO Scalar
 runEval opts defs xs = do
   expr <- prompt defs
   putStr "== "
   runExpr opts expr xs
 
-runInteractive :: Opts -> Map String Def -> [Scalar] -> IO ()
+runInteractive :: Opts -> Map String Func -> [Scalar] -> IO ()
 runInteractive opts defs xs = do
   repl
     `catches` [ Handler $ \(ex :: IOException) -> return (),
@@ -141,7 +141,7 @@ runLoop opts expr = do
   runExpr opts expr inputs
   runLoop opts expr
 
-run :: Opts -> Map String Def -> [String] -> IO ()
+run :: Opts -> Map String Func -> [String] -> IO ()
 run opts defs [] = putStrLn motd >> runInteractive opts defs []
 run opts defs (exprString : inputs) = do
   (expr, xs) <- (,) <$> parseExpr defs exprString <*> parseInputs inputs
