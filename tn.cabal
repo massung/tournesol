@@ -30,8 +30,13 @@ library
       Calc.Eval
       Calc.Expr
       Calc.Funcs
-      Calc.Lexer
       Calc.Parser
+      Calc.Parser.Dims
+      Calc.Parser.Expr
+      Calc.Parser.Lexer
+      Calc.Parser.Scalar
+      Calc.Parser.Script
+      Calc.Parser.Units
       Calc.Scalar
       Calc.Script
       Calc.Units

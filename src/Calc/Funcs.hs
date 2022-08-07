@@ -13,7 +13,7 @@ type Func = [Scalar] -> Either Error Scalar
 
 data Arg = Any | Typed Dims
 
-defMap =
+funcMap =
   M.fromList
     [ ("if", func _if [Any, Any, Any]),
       ("abs", func _abs [Any]),

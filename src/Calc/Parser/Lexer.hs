@@ -1,6 +1,7 @@
+{-# LANGUAGE NegativeLiterals #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Calc.Lexer where
+module Calc.Parser.Lexer where
 
 import Data.Functor.Identity
 import Text.Parsec
@@ -23,3 +24,16 @@ lexer = makeTokenParser lang
           reservedOpNames = ["+", "-", "*", "/", "<", ">", "<=", ">=", "=", ":"],
           caseSensitive = True
         }
+
+-- shared parsers ---------------------------------
+
+parseExponent = do
+  reservedOp lexer "^"
+  s <- parseSign
+  e <- either fromInteger toRational <$> naturalOrFloat lexer
+  return (e * s)
+
+parseSign = option 1 (neg <|> pos)
+  where
+    neg = reservedOp lexer "-" >> return -1
+    pos = reservedOp lexer "+" >> return 1
