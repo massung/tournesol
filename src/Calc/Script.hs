@@ -9,6 +9,7 @@ import Calc.Expr
 import Calc.Funcs
 import Calc.Lexer
 import Calc.Parser
+import Calc.Scalar (Scalar)
 import Calc.Units
 import Control.Exception
 import Control.Monad.Except
@@ -18,12 +19,15 @@ import Data.Functor.Identity
 import Data.Map.Strict as M
 import Text.Parsec
 import Text.Parsec.Token
-import Calc.Scalar (Scalar)
 
-type Funcs = Map String ([Scalar] -> Either Error Scalar)
+defaultScript =
+  Script
+    { units = unitMap,
+      funcs = defMap
+    }
 
-builtInDefs :: IO Funcs
-builtInDefs = either (throw . ExprError) return $ loadScriptContents defMap "built-ins.tn" source
+builtInScript :: IO Script
+builtInScript = either (throw . ExprError) return $ loadScriptContents defaultScript "built-ins.tn" source
   where
     source = $(embedStringFile "scripts/functions.tn")
 
@@ -37,7 +41,7 @@ loadScript defs path = do
   contents <- readFile path
   loadScriptContents defs path contents
 
-loadScriptContents :: Monad m => Funcs -> SourceName -> String -> m Funcs
+loadScriptContents :: Monad m => Script -> SourceName -> String -> m Script
 loadScriptContents script path contents =
   case runParser scriptParser script path contents of
     Right script' -> return script'
@@ -56,7 +60,7 @@ scriptUnits = do
   scalar <- scalarParser
   return ()
 
-scriptFunction :: ParsecT String Funcs Identity ()
+scriptFunction :: ParsecT String Script Identity ()
 scriptFunction = do
   reserved lexer "function"
   def <- identifier lexer
@@ -64,7 +68,7 @@ scriptFunction = do
   reservedOp lexer "="
   expr <- exprParser
   let f = scriptFunc args
-   in updateState $ M.insert def (f expr)
+   in updateState $ \st -> st {funcs = M.insert def (f expr) $ funcs st}
 
 scriptArgs = brackets lexer (sepBy scriptArg $ lexeme lexer (char ';'))
 

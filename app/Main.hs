@@ -86,7 +86,7 @@ printAns opts x@(Scalar _ d u) =
     then printf (printFormat opts x ++ "\n") x >> return x
     else printf (printFormat opts x ++ " %U\n") x x >> return x
 
-parseExpr :: Map String Func -> String -> IO Expr
+parseExpr :: Script -> String -> IO Expr
 parseExpr defs s = either throw return $ mapLeft ExprError $ runParser parser defs "" s
   where
     parser = do
@@ -106,13 +106,13 @@ parseCsvInputs opts = do
   fs <- lookupEnv "FS"
   parseInputs $ splitOn (fromMaybe "," $ delim opts <|> fs) input
 
-prompt :: Map String Func -> IO Expr
-prompt defs = do
+prompt :: Script -> IO Expr
+prompt script = do
   putStr ">> "
   hFlush stdout
   s <- getLine
   if L.null s
-    then prompt defs
+    then prompt script
     else parseExpr defs s
 
 runExpr :: Opts -> Expr -> [Scalar] -> IO Scalar
@@ -120,20 +120,20 @@ runExpr opts expr xs = either throw (printAns opts) result
   where
     result = evalState (runExceptT $ evalExpr expr) xs
 
-runEval :: Opts -> Map String Func -> [Scalar] -> IO Scalar
-runEval opts defs xs = do
-  expr <- prompt defs
+runEval :: Opts -> Script -> [Scalar] -> IO Scalar
+runEval opts script xs = do
+  expr <- prompt script
   putStr "== "
   runExpr opts expr xs
 
-runInteractive :: Opts -> Map String Func -> [Scalar] -> IO ()
-runInteractive opts defs xs = do
+runInteractive :: Opts -> Script -> [Scalar] -> IO ()
+runInteractive opts script xs = do
   repl
     `catches` [ Handler $ \(ex :: IOException) -> return (),
-                Handler $ \(ex :: Error) -> print ex >> runInteractive opts defs xs
+                Handler $ \(ex :: Error) -> print ex >> runInteractive opts script xs
               ]
   where
-    repl = runEval opts defs xs >>= runInteractive opts defs . L.take 5 . (: xs)
+    repl = runEval opts defs xs >>= runInteractive opts script . L.take 5 . (: xs)
 
 runLoop :: Opts -> Expr -> IO ()
 runLoop opts expr = do
@@ -141,10 +141,10 @@ runLoop opts expr = do
   runExpr opts expr inputs
   runLoop opts expr
 
-run :: Opts -> Map String Func -> [String] -> IO ()
-run opts defs [] = putStrLn motd >> runInteractive opts defs []
-run opts defs (exprString : inputs) = do
-  (expr, xs) <- (,) <$> parseExpr defs exprString <*> parseInputs inputs
+run :: Opts -> Script -> [String] -> IO ()
+run opts script [] = putStrLn motd >> runInteractive opts script []
+run opts script (exprString : inputs) = do
+  (expr, xs) <- (,) <$> parseExpr script exprString <*> parseInputs inputs
 
   -- no placeholder (run once), no inputs (use stdin), or run once w/ CLI args
   if
@@ -157,10 +157,10 @@ main = do
   opts <- getOpts
 
   -- load all the scripts to create a single defs map
-  defs <- builtInDefs >>= (`loadScripts` scriptFiles opts)
+  script <- builtInScript >>= (`loadScripts` scriptFiles opts)
 
   -- handle EOF or expression error
-  run opts defs (exprStrings opts)
+  run opts script (exprStrings opts)
     `catches` [ Handler $ \(ex :: IOException) -> return (),
                 Handler $ \(ex :: Error) -> print ex
               ]

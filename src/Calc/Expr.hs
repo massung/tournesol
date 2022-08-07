@@ -13,6 +13,11 @@ import Text.Parsec
 import Text.Parsec.Expr
 import Text.Parsec.Token
 
+data Script = Script
+  { units :: Map String Unit,
+    funcs :: Map String Func
+  }
+
 data Expr
   = Answer
   | Term Scalar
@@ -30,7 +35,7 @@ hasPlaceholder (Binary _ x y) = hasPlaceholder x || hasPlaceholder y
 hasPlaceholder (BinaryConv _ x y) = hasPlaceholder x || hasPlaceholder y
 hasPlaceholder (Call _ xs) = any hasPlaceholder xs
 
-exprParser :: Parsec String (Map String Func) Expr
+exprParser :: Parsec String Script Expr
 exprParser = buildExpressionParser exprTable exprTerm
 
 exprTerm =
@@ -61,10 +66,10 @@ exprCast = do
   unitsParser
 
 exprApply = do
-  funcs <- getState
+  script <- getState
   s <- identifier lexer
   xs <- sepBy exprParser (lexeme lexer $ char ';')
-  case M.lookup s funcs of
+  case M.lookup s $ funcs script of
     Just f -> return $ Call f xs
     Nothing -> fail $ s ++ " ?"
 

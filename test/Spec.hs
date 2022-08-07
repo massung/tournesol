@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-import Calc.Defs
 import Calc.Dims
 import Calc.Error
 import Calc.Eval
 import Calc.Expr
+import Calc.Funcs
 import Calc.Parser
 import Calc.Scalar
 import Calc.Script
@@ -24,26 +24,26 @@ epsilon = 1e-2
 
 main :: IO ()
 main = do
-  defs <- builtInDefs
+  script <- builtInScript
   hspec $ do
     testUnits
     testDims
     testScalars
     testConversions
     testArgs
-    testDefs defs
+    testDefs script
 
-testExprBasic defs args s ans = it (unwords [s, "==", show ans]) $ eval `shouldBe` Right True
+testExprBasic script args s ans = it (unwords [s, "==", show ans]) $ eval `shouldBe` Right True
   where
     eval = do
-      expr <- mapLeft ExprError $ runParser exprParser defs "" s
+      expr <- mapLeft ExprError $ runParser exprParser script "" s
       case evalState (runExceptT $ evalExpr expr) args of
         Right x -> return $ abs (x - ans) < epsilon
         Left e -> return False
 
-testExpr = testExprBasic mempty []
+testExpr = testExprBasic defaultScript []
 
-testExprArgs = testExprBasic mempty
+testExprArgs = testExprBasic defaultScript
 
 testScriptExpr defs = testExprBasic defs []
 
