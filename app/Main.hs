@@ -113,7 +113,7 @@ prompt script = do
   s <- getLine
   if L.null s
     then prompt script
-    else parseExpr defs s
+    else parseExpr script s
 
 runExpr :: Opts -> Expr -> [Scalar] -> IO Scalar
 runExpr opts expr xs = either throw (printAns opts) result
@@ -133,7 +133,7 @@ runInteractive opts script xs = do
                 Handler $ \(ex :: Error) -> print ex >> runInteractive opts script xs
               ]
   where
-    repl = runEval opts defs xs >>= runInteractive opts script . L.take 5 . (: xs)
+    repl = runEval opts script xs >>= runInteractive opts script . L.take 5 . (: xs)
 
 runLoop :: Opts -> Expr -> IO ()
 runLoop opts expr = do
