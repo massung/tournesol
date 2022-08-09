@@ -15,7 +15,7 @@ instance Semigroup Conv where
   (<>) (Linear x) (Linear y) = Linear $ x * y
   (<>) (Linear x) (Function f r) = Function (f . (* x)) ((/ x) . r)
   (<>) (Function f r) (Linear x) = Function ((* x) . f) (r . (/ x))
-  (<>) (Function f rf) (Function g rg) = Function (f . g) (rf . rg)
+  (<>) (Function f rf) (Function g rg) = Function (g . f) (rg . rf)
 
 instance Show Conv where
   show Base = "Base"
