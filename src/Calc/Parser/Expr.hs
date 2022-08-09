@@ -6,7 +6,6 @@ import Calc.Parser.Scalar
 import Calc.Parser.Units
 import Calc.Scalar
 import Calc.Script
-import Calc.Units
 import Data.Map.Strict as M
 import Text.Parsec
 import Text.Parsec.Expr
@@ -18,8 +17,7 @@ exprParser = buildExpressionParser exprTable exprTerm
 exprTerm = do
   exprParens
     <|> brackets lexer exprApply
-    <|> Term <$> scalarParser
-    <|> Term . fromUnits <$> unitsTerm
+    <|> Term <$> (scalarParser <|> scalarSingleton)
     <|> exprAnswer
     <|> (do reserved lexer "true"; return $ Term $ fromBool True)
     <|> (do reserved lexer "false"; return $ Term $ fromBool False)

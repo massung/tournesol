@@ -24,7 +24,7 @@ unitTerm = do
   script <- getState
   case units script !? ident of
     Nothing -> fail $ "unknown unit: " ++ ident
-    Just unit -> Units . M.singleton unit <$> parseExponent
+    Just unit -> Units . M.singleton unit <$> exponentParser
 
 unitsExprTable =
   [ [ Infix (do reservedOp lexer "*"; return (<>)) AssocLeft,

@@ -20,20 +20,22 @@ lexer = makeTokenParser lang
           identLetter = letter,
           opStart = oneOf ":+-*/<>=",
           opLetter = oneOf "=",
-          reservedNames = ["_", "any", "none", "to", "si", "units", "function", "true", "false"],
+          reservedNames = ["_", "any", "none", "to", "define", "si", "units", "function", "true", "false"],
           reservedOpNames = ["+", "-", "*", "/", "<", ">", "<=", ">=", "=", ":"],
           caseSensitive = True
         }
 
 -- shared parsers ---------------------------------
 
-parseExponent = do
+rationalParser = either fromInteger toRational <$> naturalOrFloat lexer
+
+exponentParser = option 1 $ do
   reservedOp lexer "^"
-  s <- parseSign
-  e <- either fromInteger toRational <$> naturalOrFloat lexer
+  s <- signParser
+  e <- rationalParser
   return (e * s)
 
-parseSign = option 1 (neg <|> pos)
+signParser = option 1 (neg <|> pos)
   where
     neg = reservedOp lexer "-" >> return -1
     pos = reservedOp lexer "+" >> return 1

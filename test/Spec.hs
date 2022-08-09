@@ -1,11 +1,10 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+import Calc.Base
 import Calc.Dims
 import Calc.Error
 import Calc.Eval
-import Calc.Expr
-import Calc.Funcs
 import Calc.Parser
 import Calc.Scalar
 import Calc.Script
@@ -24,14 +23,14 @@ epsilon = 1e-2
 
 main :: IO ()
 main = do
-  script <- builtInScript
+  script <- baseScript
   hspec $ do
-    testUnits
+    testUnits script
     testDims
     testScalars
     testConversions
     testArgs
-    testDefs script
+    testFuncs script
 
 testExprBasic script args s ans = it (unwords [s, "==", show ans]) $ eval `shouldBe` Right True
   where
@@ -45,7 +44,7 @@ testExpr = testExprBasic defaultScript []
 
 testExprArgs = testExprBasic defaultScript
 
-testScriptExpr defs = testExprBasic defs []
+testScriptExpr script = testExprBasic script []
 
 testDims = do
   describe "baseDims" $ do
@@ -54,18 +53,18 @@ testDims = do
     it "ft/s == Speed" $ do
       dims "ft/s" == baseDims Speed
 
-testUnits = do
+testUnits script = do
   describe "IsString units" $ do
     it "ft == ft" $ do
       ("ft" :: Units) `shouldBe` ("ft" :: Units)
 
   describe "parsing units" $ do
     it "ft == ft" $ do
-      parseUnits "ft" `shouldBe` Right "ft"
+      parseUnits script "ft" `shouldBe` Right "ft"
     it "ft/s == ft/s" $ do
-      parseUnits "ft/s" `shouldBe` Right "ft/s"
+      parseUnits script "ft/s" `shouldBe` Right "ft/s"
     it "asdf == invalid units" $ do
-      parseUnits "asdf" `shouldSatisfy` isLeft
+      parseUnits script "asdf" `shouldSatisfy` isLeft
 
   describe "append units" $ do
     it "noUnits <> ft" $ do
@@ -215,25 +214,25 @@ testArgs = do
     testExprArgs [1, 2] "_ ft + _ in" "14 in"
     testExprArgs [2, 3, 1] "_ * _ - _" "5"
 
-testDefs defs = do
+testFuncs script = do
   describe "code functions" $ do
-    testScriptExpr defs "[if true; 1; 2]" 1
-    testScriptExpr defs "[if false; 1; 2]" 2
-    testScriptExpr defs "[abs -8 ft]" "8 ft"
-    testScriptExpr defs "[signum -4 ft]" "-1 ft"
-    testScriptExpr defs "[sqrt 4 ft^2]" "2 ft"
-    testScriptExpr defs "[exp [log 16]]" 16
-    testScriptExpr defs "[truncate 4.4 in]" "4 in"
-    testScriptExpr defs "[floor 4.7 mi]" "4 mi"
-    testScriptExpr defs "[ceil 4.2 kn]" "5 kn"
-    testScriptExpr defs "[round 4.3 acre]" "4 acre"
-    testScriptExpr defs "[sin 90 deg]" 1
-    testScriptExpr defs "[cos [pi] : rad]" (-1)
-    testScriptExpr defs "[asin [sin 45 deg]] to deg" "45 deg"
-    testScriptExpr defs "[asinh [sinh 1.4 rad]]" "1.4 rad"
+    testScriptExpr script "[if true; 1; 2]" 1
+    testScriptExpr script "[if false; 1; 2]" 2
+    testScriptExpr script "[abs -8 ft]" "8 ft"
+    testScriptExpr script "[signum -4 ft]" "-1 ft"
+    testScriptExpr script "[sqrt 4 ft^2]" "2 ft"
+    testScriptExpr script "[exp [log 16]]" 16
+    testScriptExpr script "[truncate 4.4 in]" "4 in"
+    testScriptExpr script "[floor 4.7 mi]" "4 mi"
+    testScriptExpr script "[ceil 4.2 kn]" "5 kn"
+    testScriptExpr script "[round 4.3 acre]" "4 acre"
+    testScriptExpr script "[sin 90 deg]" 1
+    testScriptExpr script "[cos [pi] : rad]" (-1)
+    testScriptExpr script "[asin [sin 45 deg]] to deg" "45 deg"
+    testScriptExpr script "[asinh [sinh 1.4 rad]]" "1.4 rad"
 
   describe "script functions" $ do
-    testScriptExpr defs "[areaOfCircle 4 m]" "50.266 m^2"
-    testScriptExpr defs "[areaOfRect 2 ft; 3 in]" "72 in^2"
-    testScriptExpr defs "[volumeOfTorus 2 in; 12 in]" "947.482 in^3"
-    testScriptExpr defs "[transferRate 10 GB; 1 hr]" "2.844 MB/s"
+    testScriptExpr script "[areaOfCircle 4 m]" "50.266 m^2"
+    testScriptExpr script "[areaOfRect 2 ft; 3 in]" "72 in^2"
+    testScriptExpr script "[volumeOfTorus 2 in; 12 in]" "947.482 in^3"
+    testScriptExpr script "[transferRate 10 GB; 1 hr]" "2.844 MB/s"

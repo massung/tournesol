@@ -5,11 +5,11 @@
 
 module Main where
 
+import Calc.Base
 import Calc.Error
 import Calc.Eval
 import Calc.Expr
 import Calc.Funcs
-import Calc.Lexer
 import Calc.Parser
 import Calc.Scalar
 import Calc.Script
@@ -19,10 +19,12 @@ import Control.Exception
 import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Either.Extra
+import Data.FileEmbed
 import Data.List.Extra as L
 import Data.Map.Strict as M
 import Data.Maybe
 import Data.Ratio
+import Data.String
 import System.Console.CmdArgs
 import System.Environment
 import System.IO
@@ -45,7 +47,7 @@ motd = printf "Tournesol v%d.%d.%d, (c) Jeffrey Massung" major minor patch
   where
     major = 0 :: Int
     minor = 9 :: Int
-    patch = 0 :: Int
+    patch = 5 :: Int
 
 getOpts =
   cmdArgs $
@@ -95,16 +97,16 @@ parseExpr defs s = either throw return $ mapLeft ExprError $ runParser parser de
       eof
       return expr
 
-parseInputs :: [String] -> IO [Scalar]
-parseInputs inputs = either (throw . ExprError) return $ sequence xs
+parseInputs :: Script -> [String] -> IO [Scalar]
+parseInputs script inputs = either (throw . ExprError) return $ sequence xs
   where
-    xs = [parseScalar $ trimStart s | s <- inputs]
+    xs = [parseScalar script $ trimStart s | s <- inputs]
 
-parseCsvInputs :: Opts -> IO [Scalar]
-parseCsvInputs opts = do
+parseCsvInputs :: Opts -> Script -> IO [Scalar]
+parseCsvInputs opts script = do
   input <- getLine
   fs <- lookupEnv "FS"
-  parseInputs $ splitOn (fromMaybe "," $ delim opts <|> fs) input
+  parseInputs script $ splitOn (fromMaybe "," $ delim opts <|> fs) input
 
 prompt :: Script -> IO Expr
 prompt script = do
@@ -135,21 +137,21 @@ runInteractive opts script xs = do
   where
     repl = runEval opts script xs >>= runInteractive opts script . L.take 5 . (: xs)
 
-runLoop :: Opts -> Expr -> IO ()
-runLoop opts expr = do
-  inputs <- parseCsvInputs opts
+runLoop :: Opts -> Script -> Expr -> IO ()
+runLoop opts script expr = do
+  inputs <- parseCsvInputs opts script
   runExpr opts expr inputs
-  runLoop opts expr
+  runLoop opts script expr
 
 run :: Opts -> Script -> [String] -> IO ()
 run opts script [] = putStrLn motd >> runInteractive opts script []
 run opts script (exprString : inputs) = do
-  (expr, xs) <- (,) <$> parseExpr script exprString <*> parseInputs inputs
+  (expr, xs) <- (,) <$> parseExpr script exprString <*> parseInputs script inputs
 
   -- no placeholder (run once), no inputs (use stdin), or run once w/ CLI args
   if
       | not (hasPlaceholder expr) -> void $ runExpr opts expr []
-      | L.null xs -> runLoop opts expr
+      | L.null xs -> runLoop opts script expr
       | otherwise -> void $ runExpr opts expr xs
 
 main :: IO ()
@@ -157,7 +159,7 @@ main = do
   opts <- getOpts
 
   -- load all the scripts to create a single defs map
-  script <- builtInScript >>= (`loadScripts` scriptFiles opts)
+  script <- baseScript >>= (`loadScripts` scriptFiles opts)
 
   -- handle EOF or expression error
   run opts script (exprStrings opts)

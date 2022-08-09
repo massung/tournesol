@@ -13,3 +13,5 @@ scalarParser = do
   return $ case n of
     Left i -> Scalar (fromIntegral i) (dims u) u
     Right f -> Scalar (toRational f) (dims u) u
+
+scalarSingleton = fromUnits <$> unitsTerm

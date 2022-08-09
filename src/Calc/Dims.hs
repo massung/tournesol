@@ -7,8 +7,6 @@ module Calc.Dims where
 import Data.List.Extra as L
 import Data.Map.Strict as M
 import Data.Ratio
-import Text.Parsec
-import Text.Parsec.Token
 
 data Dim
   = Angle
@@ -29,7 +27,7 @@ data Dim
   | Storage
   | Voltage
   | Volume
-  deriving (Eq, Ord, Show)
+  deriving (Enum, Eq, Ord, Show)
 
 newtype Dims = Dims (Map Dim Rational)
   deriving (Eq, Ord)
@@ -67,6 +65,8 @@ baseDims Speed = Dims [(Length, 1), (Duration, -1)]
 baseDims Storage = Dims [(Storage, 1)]
 baseDims Voltage = Dims [(Mass, 1), (Length, 2), (Duration, -3), (Current, -1)]
 baseDims Volume = Dims [(Length, 3)]
+
+fromDims dims = L.find ((== dims) . baseDims) $ enumFromTo Angle Volume
 
 nullDims (Dims dims) = M.null dims
 

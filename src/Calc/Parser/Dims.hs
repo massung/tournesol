@@ -1,7 +1,6 @@
 module Calc.Parser.Dims where
 
 import Calc.Dims
-import Calc.Expr
 import Calc.Parser.Lexer
 import Data.Foldable as F
 import Text.Parsec
@@ -10,7 +9,7 @@ import Text.Parsec.Token
 dimParser :: Parsec String st (Dim, Rational)
 dimParser = do
   s <- identifier lexer >>= fromString
-  e <- option 1 parseExponent
+  e <- exponentParser
   return (s, e)
   where
     fromString s

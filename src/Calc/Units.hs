@@ -12,7 +12,6 @@ import Data.Map.Strict as M
 import Data.Maybe
 import Data.Ratio
 import Data.String
-import Data.Tuple.Extra
 
 data Unit = Unit {dim :: Dim, symbol :: String, conv :: Conv}
 
@@ -360,13 +359,9 @@ recipUnits = mapUnits negate
 
 (</>) a b = a <> recipUnits b
 
--- simplify (Units m) = (M.map (`div` factor) m, factor)
---   where
---     factor =
---       let x = M.foldl' gcd (maximum m) m
---        in if all (< 0) m then negate x else x
+unitsConv (Units u) = F.foldl' (<>) Base [powConv n conv | (Unit {conv=conv}, n) <- M.toList u]
 
--- simplifyUnits u = first Units $ simplify u
+unitsConvScale from to = recipConv (unitsConv from) <> unitsConv to
 
 validateUnits (Units u) = all (== 1) $ M.foldlWithKey' countDims M.empty u
   where
