@@ -25,6 +25,7 @@ data Dim
   | Resistance
   | Speed
   | Storage
+  | Temperature
   | Voltage
   | Volume
   deriving (Enum, Eq, Ord, Show)
@@ -63,6 +64,7 @@ baseDims Pressure = Dims [(Mass, 1), (Length, -1), (Duration, -2)]
 baseDims Resistance = Dims [(Mass, 1), (Length, 2), (Duration, -3), (Current, -4)]
 baseDims Speed = Dims [(Length, 1), (Duration, -1)]
 baseDims Storage = Dims [(Storage, 1)]
+baseDims Temperature = Dims [(Temperature, 1)]
 baseDims Voltage = Dims [(Mass, 1), (Length, 2), (Duration, -3), (Current, -1)]
 baseDims Volume = Dims [(Length, 3)]
 

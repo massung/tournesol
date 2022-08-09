@@ -54,10 +54,6 @@ testDims = do
       dims "ft/s" == baseDims Speed
 
 testUnits script = do
-  describe "IsString units" $ do
-    it "ft == ft" $ do
-      ("ft" :: Units) `shouldBe` ("ft" :: Units)
-
   describe "parsing units" $ do
     it "ft == ft" $ do
       parseUnits script "ft" `shouldBe` Right "ft"
@@ -66,7 +62,7 @@ testUnits script = do
     it "asdf == invalid units" $ do
       parseUnits script "asdf" `shouldSatisfy` isLeft
 
-  describe "append units" $ do
+  describe "combine units" $ do
     it "noUnits <> ft" $ do
       (noUnits <> "ft") `shouldBe` "ft"
     it "ft <> noUnits" $ do

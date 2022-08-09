@@ -4,8 +4,6 @@ import Calc.Conv
 import Calc.Dims
 import Calc.Error
 import Calc.Units
-import Data.Foldable as F
-import Data.Map.Strict as M
 import Data.Ratio
 import Text.Printf
 

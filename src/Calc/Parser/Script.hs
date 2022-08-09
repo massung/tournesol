@@ -26,14 +26,13 @@ scriptAssign valueParser = do
 
 scriptUnits = do
   reserved lexer "define"
-  --si <- (reserved lexer "si" >> return True) <|> return False
   reserved lexer "units"
   r <- option 1 rationalParser
   name <- identifier lexer
   Scalar x d u <- scriptAssign (scalarParser <|> scalarSingleton)
   case fromDims d of
     Nothing -> fail "unknown dimensions"
-    Just dim -> let unit = Unit {dim=dim, symbol=name, conv=Linear $ r / x}
+    Just dim -> let unit = Unit {dim=dim, symbol=name, conv=unitsConv u <> Linear (r / x)}
                  in updateState $ \st -> st {units = M.insert name unit $ units st}
 
 scriptFunction = do

@@ -7,20 +7,20 @@ import Data.Ratio
 data Conv
   = Base
   | Linear Rational
-  | Function (Rational -> Rational)
+  | Function (Rational -> Rational) (Rational -> Rational)
 
 instance Semigroup Conv where
   (<>) Base y = y
   (<>) x Base = x
   (<>) (Linear x) (Linear y) = Linear $ x * y
-  (<>) (Linear x) (Function f) = Function $ (* x) . f
-  (<>) (Function f) (Linear y) = Function $ f . (* y)
-  (<>) (Function f) (Function g) = Function $ f . g
+  (<>) (Linear x) (Function f r) = Function (f . (* x)) ((/ x) . r)
+  (<>) (Function f r) (Linear x) = Function ((* x) . f) (r . (/ x))
+  (<>) (Function f rf) (Function g rg) = Function (f . g) (rf . rg)
 
 instance Show Conv where
   show Base = "Base"
   show (Linear x) = "Linear " ++ show x
-  show (Function f) = "Function"
+  show (Function f r) = "Function"
 
 siConversions =
   [ ("a", Linear 1e18),
@@ -52,17 +52,17 @@ storageConversions =
 
 recipConv Base = Base
 recipConv (Linear x) = Linear $ recip x
-recipConv (Function f) = Function $ recip . f
+recipConv (Function f r) = Function r f
 
 powConv _ Base = Base
-powConv 0 _ = Function $ const 1
+powConv 0 _ = Function (const 1) (const 1)
 powConv 1 x = x
 powConv n (Linear x) =
   if denominator n == 1
     then Linear $ x ^^ numerator n
     else Linear $ toRational $ fromRational x ** fromRational n
-powConv n (Function f) = Function f
+powConv n (Function f r) = error "exponent of conversion function"
 
 applyConv Base w = w
 applyConv (Linear x) w = w * x
-applyConv (Function f) w = f w
+applyConv (Function f r) w = f w

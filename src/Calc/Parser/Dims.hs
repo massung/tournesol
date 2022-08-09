@@ -29,6 +29,7 @@ dimParser = do
       | s == "resistance" = return Resistance
       | s == "speed" = return Speed
       | s == "storage" = return Storage
+      | s == "temperature" = return Temperature
       | s == "voltage" = return Voltage
       | s == "volume" = return Volume
       | otherwise = fail $ "no dimension " ++ s

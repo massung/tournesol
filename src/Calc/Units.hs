@@ -229,6 +229,27 @@ _bit = Unit {dim = Storage, symbol = "b", conv = Linear 8}
 _byte = Unit {dim = Storage, symbol = "B", conv = Base}
 
 {-
+-- temperature units
+-}
+
+_celcius = Unit {dim = Temperature, symbol = "Tc", conv = Base}
+
+_fahrenheit = Unit {dim = Temperature, symbol = "Tf", conv = Function cToF fToC}
+  where
+    cToF x = x * (9 % 5) + 32
+    fToC x = (x - 32) * (5 % 9)
+
+_kelvin = Unit {dim = Temperature, symbol = "Tk", conv = Function cToK kToC}
+  where
+    cToK x = x + 273.15
+    kToC x = x - 273.15
+
+_rankine = Unit {dim = Temperature, symbol = "Tr", conv = Function cToR rToC}
+  where
+    cToR x = x * (9 % 5) + 491.67
+    rToC x = (x - 491.67) * (5 % 9)
+
+{-
 -- volume units
 -}
 
@@ -269,12 +290,14 @@ unitMap = F.foldl' (\m u -> M.insert (symbol u) u m) mempty units
             _btu,
             _byte,
             _cable,
+            _celcius,
             _chain,
             _coulomb,
             _cup,
             _day,
             _degree,
             _electronVolt,
+            _fahrenheit,
             _farad,
             _fathom,
             _fluidOunce,
@@ -291,6 +314,7 @@ unitMap = F.foldl' (\m u -> M.insert (symbol u) u m) mempty units
             _hertz,
             _inch,
             _joule,
+            _kelvin,
             _knot,
             _kph,
             _league,
@@ -315,6 +339,7 @@ unitMap = F.foldl' (\m u -> M.insert (symbol u) u m) mempty units
             _psi,
             _quart,
             _radian,
+            _rankine,
             _rev,
             _rod,
             _second,
