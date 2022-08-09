@@ -9,7 +9,6 @@ import Calc.Base
 import Calc.Error
 import Calc.Eval
 import Calc.Expr
-import Calc.Funcs
 import Calc.Parser
 import Calc.Scalar
 import Calc.Script
@@ -19,12 +18,9 @@ import Control.Exception
 import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Either.Extra
-import Data.FileEmbed
 import Data.List.Extra as L
-import Data.Map.Strict as M
 import Data.Maybe
 import Data.Ratio
-import Data.String
 import System.Console.CmdArgs
 import System.Environment
 import System.IO
