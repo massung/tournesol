@@ -41,10 +41,14 @@ tn '[asin [sqrt 2] / 2] to deg'
 
 ## Scripts and Custom Functions
 
-You can define your own functions in scripts:
+You can define your own units and functions in scripts:
 
-```bash
-# myfuncs.tn
+```
+# custom units
+define ag units 1363827 bg = 12500 L
+define ag units 1 bu = 0.323 bg
+
+# some functions
 function transferRate [storage; duration] = _/_ to MB/s
 function areaOfCircle [length] = [pi] * _^2
 ```

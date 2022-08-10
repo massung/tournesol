@@ -6,7 +6,7 @@ import Data.Ratio
 
 data Conv
   = Base
-  | Linear Rational
+  | Linear !Rational
   | Function (Rational -> Rational) (Rational -> Rational)
 
 instance Semigroup Conv where

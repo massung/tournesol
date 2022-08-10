@@ -31,6 +31,7 @@ import Text.Printf
 -- command line options
 data Opts = Opts
   { scriptFiles :: [String],
+    useSystems :: [String],
     precision :: Maybe Int,
     sciNotation :: Bool,
     delim :: Maybe String,
@@ -49,6 +50,7 @@ getOpts =
   cmdArgs $
     Opts
       { scriptFiles = def &= explicit &= name "f" &= name "functions" &= typ "FILE" &= help "Load Tournesol script functions file",
+        useSystems = def &= explicit &= name "u" &= name "use" &= typ "SYSTEM" &= help "Use system units",
         precision = def &= explicit &= name "p" &= name "precision" &= typ "DIGITS" &= help "Precision digits to output, defaults to 2",
         sciNotation = def &= explicit &= name "g" &= name "sci-notation" &= help "Output using scientific notation",
         noUnits = def &= explicit &= name "n" &= name "no-units" &= help "Don't output units",

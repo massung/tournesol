@@ -7,7 +7,7 @@ import Calc.Units
 import Data.Ratio
 import Text.Printf
 
-data Scalar = Scalar Rational Dims Units
+data Scalar = Scalar !Rational !Dims !Units
   deriving (Eq)
 
 instance Show Scalar where

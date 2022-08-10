@@ -13,7 +13,7 @@ import Data.Maybe
 import Data.Ratio
 import Data.String
 
-data Unit = Unit {dim :: Dim, symbol :: String, conv :: Conv}
+data Unit = Unit {dim :: !Dim, symbol :: !String, conv :: !Conv}
 
 instance Eq Unit where
   (==) a b = symbol a == symbol b
