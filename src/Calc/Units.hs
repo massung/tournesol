@@ -56,9 +56,9 @@ instance Show Units where
 
 _pi = toRational pi
 
-{-
+--
 -- angle units
--}
+--
 
 _radian = Unit {dim = Angle, symbol = "rad", conv = Base}
 
@@ -70,17 +70,17 @@ _rev = Unit {dim = Angle, symbol = "rev", conv = Linear ((1 % 2) / _pi)}
 
 _turn = Unit {dim = Angle, symbol = "turn", conv = Linear ((1 % 2) / _pi)}
 
-{-
+--
 -- area units
--}
+--
 
 _hectare = Unit {dim = Area, symbol = "ha", conv = Linear 1e-4}
 
 _acre = Unit {dim = Area, symbol = "acre", conv = Linear (78125 % 316160658)}
 
-{-
+--
 -- duration units
--}
+--
 
 _second = Unit {dim = Duration, symbol = "s", conv = Base}
 
@@ -90,9 +90,9 @@ _hour = Unit {dim = Duration, symbol = "hr", conv = Linear (1 % 3600)}
 
 _day = Unit {dim = Duration, symbol = "day", conv = Linear (1 % 86400)}
 
-{-
+--
 -- electrical units
--}
+--
 
 _farad = Unit {dim = Capacitance, symbol = "F", conv = Base}
 
@@ -104,9 +104,9 @@ _ohm = Unit {dim = Resistance, symbol = "O", conv = Base}
 
 _volt = Unit {dim = Voltage, symbol = "V", conv = Base}
 
-{-
+--
 -- energy units
--}
+--
 
 _joule = Unit {dim = Energy, symbol = "J", conv = Base}
 
@@ -116,9 +116,9 @@ _therm = Unit {dim = Energy, symbol = "thm", conv = Linear (1 % 105480400)}
 
 _electronVolt = Unit {dim = Energy, symbol = "eV", conv = Linear (5000000000000000000000000000 % 801088317)}
 
-{-
+--
 -- force units
--}
+--
 
 _newton = Unit {dim = Force, symbol = "N", conv = Base}
 
@@ -126,15 +126,15 @@ _poundForce = Unit {dim = Force, symbol = "lbf", conv = Linear (2000000000000 % 
 
 _pond = Unit {dim = Force, symbol = "pond", conv = Linear (20000000 % 1961333)}
 
-{-
+--
 -- frequency units
--}
+--
 
 _hertz = Unit {dim = Frequency, symbol = "hz", conv = Base}
 
-{-
+--
 -- length units
--}
+--
 
 _meter = Unit {dim = Length, symbol = "m", conv = Base}
 
@@ -166,9 +166,9 @@ _link = Unit {dim = Length, symbol = "link", conv = Linear (62500 % 12573)}
 
 _rod = Unit {dim = Length, symbol = "rod", conv = Linear (2500 % 12573)}
 
-{-
--- astronomical lengths
--}
+--
+-- astronomical length units
+--
 
 _parsec = Unit {dim = Length, symbol = "pc", conv = Linear (1 % 30856775814913670)}
 
@@ -176,9 +176,9 @@ _astronomicalUnit = Unit {dim = Length, symbol = "au", conv = Linear (1 % 149597
 
 _lightYear = Unit {dim = Length, symbol = "ly", conv = Linear (1 % 9460730472580800)}
 
-{-
+--
 -- mass units
--}
+--
 
 _gram = Unit {dim = Mass, symbol = "g", conv = Linear 1000}
 
@@ -192,17 +192,17 @@ _hundredweight = Unit {dim = Mass, symbol = "cwt", conv = Linear (1000000 % 4535
 
 _ton = Unit {dim = Mass, symbol = "t", conv = Linear (50000 % 45359237)}
 
-{-
+--
 -- power units
--}
+--
 
 _watt = Unit {dim = Power, symbol = "W", conv = Base}
 
 _horsepower = Unit {dim = Power, symbol = "hp", conv = Linear 0.001341}
 
-{-
+--
 -- pressure units
--}
+--
 
 _pascal = Unit {dim = Pressure, symbol = "Pa", conv = Base}
 
@@ -210,9 +210,9 @@ _psi = Unit {dim = Pressure, symbol = "psi", conv = Linear 145e-6}
 
 _bar = Unit {dim = Pressure, symbol = "bar", conv = Linear 1e-5}
 
-{-
+--
 -- speed units
--}
+--
 
 _kph = Unit {dim = Speed, symbol = "kph", conv = Linear (18 % 5)}
 
@@ -220,17 +220,17 @@ _knot = Unit {dim = Speed, symbol = "kn", conv = Linear (3125 % 1397)}
 
 _mph = Unit {dim = Speed, symbol = "mph", conv = Linear (900 % 463)}
 
-{-
+--
 -- storage units
--}
+--
 
 _bit = Unit {dim = Storage, symbol = "b", conv = Linear 8}
 
 _byte = Unit {dim = Storage, symbol = "B", conv = Base}
 
-{-
+--
 -- temperature units
--}
+--
 
 _celcius = Unit {dim = Temperature, symbol = "Tc", conv = Base}
 
@@ -249,9 +249,9 @@ _rankine = Unit {dim = Temperature, symbol = "Tr", conv = Function cToR rToC}
     cToR x = x * (9 % 5) + 491.67
     rToC x = (x - 491.67) * (5 % 9)
 
-{-
+--
 -- volume units
--}
+--
 
 _liter = Unit {dim = Volume, symbol = "L", conv = Linear 1000}
 

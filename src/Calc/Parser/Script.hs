@@ -16,7 +16,7 @@ import Text.Parsec.Token hiding (symbol)
 
 scriptParser = do
   whiteSpace lexer
-  skipMany (scriptUnits <|> scriptFunction)
+  skipMany (scriptSystem <|> scriptFunction)
   eof
   getState
 
@@ -24,8 +24,13 @@ scriptAssign valueParser = do
   reservedOp lexer "="
   valueParser
 
+scriptSystem = do
+  reserved lexer "system"
+  sys <- stringLiteral lexer <|> identifier lexer
+  units <- many scriptUnits
+  updateState $ \st -> st {systems=M.insert sys (fromList units) $ systems st}
+
 scriptUnits = do
-  reserved lexer "define"
   reserved lexer "units"
   r <- option 1 rationalParser
   name <- identifier lexer
@@ -33,7 +38,7 @@ scriptUnits = do
   case fromDims d of
     Nothing -> fail "unknown dimensions"
     Just dim -> let unit = Unit {dim=dim, symbol=name, conv=unitsConv u <> Linear (r / x)}
-                 in updateState $ \st -> st {units = M.insert name unit $ units st}
+                 in return (name, unit)
 
 scriptFunction = do
   reserved lexer "function"

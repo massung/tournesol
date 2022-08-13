@@ -4,6 +4,7 @@ import Calc.Dims
 import Calc.Units
 import Control.Exception
 import Text.Parsec
+import Text.Parsec.Error
 
 data Error
   = NoExpr

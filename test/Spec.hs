@@ -31,6 +31,7 @@ main = do
     testConversions
     testArgs
     testFuncs script
+    testScript script
 
 testExprBasic script args s ans = it (unwords [s, "==", show ans]) $ eval `shouldBe` Right True
   where
@@ -211,7 +212,7 @@ testArgs = do
     testExprArgs [2, 3, 1] "_ * _ - _" "5"
 
 testFuncs script = do
-  describe "code functions" $ do
+  describe "built-in functions" $ do
     testScriptExpr script "[if true; 1; 2]" 1
     testScriptExpr script "[if false; 1; 2]" 2
     testScriptExpr script "[abs -8 ft]" "8 ft"
@@ -226,6 +227,10 @@ testFuncs script = do
     testScriptExpr script "[cos [pi] : rad]" (-1)
     testScriptExpr script "[asin [sin 45 deg]] to deg" "45 deg"
     testScriptExpr script "[asinh [sinh 1.4 rad]]" "1.4 rad"
+
+testScript script = do
+  --describe "script units" $ do
+  --  testScriptExpr (useSystem script "astro") "1 AU : mi" "92955807.3026 mi"
 
   describe "script functions" $ do
     testScriptExpr script "[areaOfCircle 4 m]" "50.266 m^2"

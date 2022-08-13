@@ -25,6 +25,12 @@ defaultScript =
 scriptFunc :: [Arg] -> Expr -> Func
 scriptFunc args expr = func (evalState $ runExceptT $ evalExpr expr) args
 
+registerUnit :: String -> Unit -> Script -> Script
+registerUnit sys unit script = script {systems=M.alter regTo sys (systems script)}
+  where
+    regTo Nothing = Just $ M.singleton sys unit
+    regTo (Just units) = Just $ M.insert sys unit units
+
 useSystem :: Script -> String -> Script
 useSystem script sys = script {units = units script <> sysUnits}
   where

@@ -159,8 +159,9 @@ main = do
   -- load all the scripts to create a single defs map
   script <- baseScript >>= (`loadScripts` scriptFiles opts)
 
-  -- handle EOF or expression error
-  run opts script (exprStrings opts)
-    `catches` [ Handler $ \(ex :: IOException) -> return (),
-                Handler $ \(ex :: Error) -> print ex
-              ]
+  -- use systems
+  let script' = foldl' useSystem script $ useSystems opts
+   in run opts script (exprStrings opts)
+        `catches` [ Handler $ \(ex :: IOException) -> return (),
+                    Handler $ \(ex :: Error) -> print ex
+                  ]

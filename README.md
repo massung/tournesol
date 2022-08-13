@@ -44,9 +44,11 @@ tn '[asin [sqrt 2] / 2] to deg'
 You can define your own units and functions in scripts:
 
 ```
-# custom units
-define ag units 1363827 bg = 12500 L
-define ag units 1 bu = 0.323 bg
+# agricultural units
+system ag
+
+ag units 1363827 bg = 12500 L
+ag units 1 bu = 0.323 bg
 
 # some functions
 function transferRate [storage; duration] = _/_ to MB/s
