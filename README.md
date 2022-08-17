@@ -36,15 +36,22 @@ tn '_ / _ in' '3 yd^2' 4
 tn '_ deg/s : rev/min' < values.txt
 
 # call functions that understand units
+tn '[cos 200 grad]'
 tn '[asin [sqrt 2] / 2] to deg'
 ```
 
 ## Scripts and Custom Functions
 
-You can define your own functions in scripts:
+You can define your own units and functions in scripts:
 
-```bash
-# myfuncs.tn
+```
+# agricultural units
+system ag
+
+ag units 1363827 bg = 12500 L
+ag units 1 bu = 0.323 bg
+
+# some functions
 function transferRate [storage; duration] = _/_ to MB/s
 function areaOfCircle [length] = [pi] * _^2
 ```

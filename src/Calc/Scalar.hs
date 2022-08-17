@@ -4,13 +4,10 @@ import Calc.Conv
 import Calc.Dims
 import Calc.Error
 import Calc.Units
-import Data.Foldable as F
-import Data.Map.Strict as M
 import Data.Ratio
-import Data.String
 import Text.Printf
 
-data Scalar = Scalar Rational Dims Units
+data Scalar = Scalar !Rational !Dims !Units
   deriving (Eq)
 
 instance Show Scalar where
@@ -87,10 +84,5 @@ harmonize s@(Scalar x d from) to
 convert (Scalar x d from) to
   | nullUnits to = Right $ Scalar x d from
   | nullDims d = Right $ Scalar x (dims to) to
-  | d == dims to = Right $ Scalar (applyConv (conversionScale from to) x) d to
+  | d == dims to = Right $ Scalar (applyConv (unitsConvScale from to) x) d to
   | otherwise = Left $ ConversionError from to
-
-conversionScale (Units from) (Units to) = recipConv from' <> to'
-  where
-    from' = F.foldl' (<>) Base [powConv n conv | (Unit {conv = conv}, n) <- M.toList from]
-    to' = F.foldl' (<>) Base [powConv n conv | (Unit {conv = conv}, n) <- M.toList to]

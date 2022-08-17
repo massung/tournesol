@@ -4,13 +4,9 @@
 
 module Calc.Dims where
 
-import Calc.Lexer
-import Data.Char
 import Data.List.Extra as L
 import Data.Map.Strict as M
 import Data.Ratio
-import Text.Parsec
-import Text.Parsec.Token
 
 data Dim
   = Angle
@@ -29,9 +25,10 @@ data Dim
   | Resistance
   | Speed
   | Storage
+  | Temperature
   | Voltage
   | Volume
-  deriving (Eq, Ord, Show)
+  deriving (Enum, Eq, Ord, Show)
 
 newtype Dims = Dims (Map Dim Rational)
   deriving (Eq, Ord)
@@ -67,8 +64,11 @@ baseDims Pressure = Dims [(Mass, 1), (Length, -1), (Duration, -2)]
 baseDims Resistance = Dims [(Mass, 1), (Length, 2), (Duration, -3), (Current, -4)]
 baseDims Speed = Dims [(Length, 1), (Duration, -1)]
 baseDims Storage = Dims [(Storage, 1)]
+baseDims Temperature = Dims [(Temperature, 1)]
 baseDims Voltage = Dims [(Mass, 1), (Length, 2), (Duration, -3), (Current, -1)]
 baseDims Volume = Dims [(Length, 3)]
+
+fromDims dims = L.find ((== dims) . baseDims) $ enumFromTo Angle Volume
 
 nullDims (Dims dims) = M.null dims
 
@@ -77,46 +77,3 @@ mapDims f (Dims dims) = Dims $ M.map f dims
 recipDims = mapDims negate
 
 powDims n = mapDims (* n)
-
--- parsing -------------------------------------------------
-
-dimParser :: Parsec String st (Dim, Rational)
-dimParser = do
-  s <- identifier lexer >>= fromString
-  e <- option 1 parseExponent
-  return (s, e)
-  where
-    fromString s
-      | s == "angle" = return Angle
-      | s == "area" = return Area
-      | s == "capacitance" = return Capacitance
-      | s == "charge" = return Charge
-      | s == "current" = return Current
-      | s == "duration" = return Duration
-      | s == "energy" = return Energy
-      | s == "force" = return Force
-      | s == "frequency" = return Frequency
-      | s == "length" = return Length
-      | s == "mass" = return Mass
-      | s == "power" = return Power
-      | s == "pressure" = return Pressure
-      | s == "resistance" = return Resistance
-      | s == "speed" = return Speed
-      | s == "storage" = return Storage
-      | s == "voltage" = return Voltage
-      | s == "volume" = return Volume
-      | otherwise = fail $ "no dimension " ++ s
-
-dimsParser :: Parsec String st Dims
-dimsParser = do
-  dims <- brackets lexer $ sepBy dimParser (lexeme lexer $ char ';')
-  return $ L.foldl' (<>) mempty [powDims e $ baseDims dim | (dim, e) <- dims]
-
-parseExponent = do
-  reservedOp lexer "^"
-  s <- option 1 (neg <|> pos)
-  e <- either fromInteger toRational <$> naturalOrFloat lexer
-  return (e * s)
-  where
-    neg = reservedOp lexer "-" >> return -1
-    pos = reservedOp lexer "+" >> return 1
