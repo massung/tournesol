@@ -36,6 +36,7 @@ tn '_ / _ in' '3 yd^2' 4
 tn '_ deg/s : rev/min' < values.txt
 
 # call functions that understand units
+tn '[cos 200 grad]'
 tn '[asin [sqrt 2] / 2] to deg'
 ```
 
