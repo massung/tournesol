@@ -14,6 +14,7 @@ import Calc.Scalar
 import Calc.Script
 import Calc.Units hiding (name)
 import Control.Applicative
+import Control.Concurrent
 import Control.Exception
 import Control.Monad.Except
 import Control.Monad.State.Strict
@@ -22,6 +23,8 @@ import Data.List.Extra as L
 import Data.Maybe
 import Data.Ratio
 import System.Console.CmdArgs
+import System.Console.Haskeline
+import System.Console.Haskeline.IO
 import System.Environment
 import System.IO
 import Text.Parsec hiding (try, (<|>))
@@ -106,34 +109,34 @@ parseCsvInputs opts script = do
   fs <- lookupEnv "FS"
   parseInputs script $ splitOn (fromMaybe "," $ delim opts <|> fs) input
 
-prompt :: Script -> IO Expr
-prompt script = do
-  putStr ">> "
-  hFlush stdout
-  s <- getLine
-  if L.null s
-    then prompt script
-    else parseExpr script s
+prompt :: InputState -> Script -> IO Expr
+prompt hd script = do
+  line <- queryInput hd $ getInputLine ">> "
+  case line of
+    Nothing -> prompt hd script
+    Just s -> if L.null s
+      then prompt hd script
+      else parseExpr script s
 
 runExpr :: Opts -> Expr -> [Scalar] -> IO Scalar
 runExpr opts expr xs = either throw (printAns opts) result
   where
     result = evalState (runExceptT $ evalExpr expr) xs
 
-runEval :: Opts -> Script -> [Scalar] -> IO Scalar
-runEval opts script xs = do
-  expr <- prompt script
+runEval :: Opts -> InputState -> Script -> [Scalar] -> IO Scalar
+runEval opts hd script xs = do
+  expr <- prompt hd script
   putStr "== "
   runExpr opts expr xs
 
-runInteractive :: Opts -> Script -> [Scalar] -> IO ()
-runInteractive opts script xs = do
+runInteractive :: Opts -> InputState -> Script -> [Scalar] -> IO ()
+runInteractive opts hd script xs = do
   repl
     `catches` [ Handler $ \(ex :: IOException) -> return (),
-                Handler $ \(ex :: Error) -> print ex >> runInteractive opts script xs
+                Handler $ \(ex :: Error) -> print ex >> runInteractive opts hd script xs
               ]
   where
-    repl = runEval opts script xs >>= runInteractive opts script . L.take 5 . (: xs)
+    repl = runEval opts hd script xs >>= runInteractive opts hd script . L.take 5 . (: xs)
 
 runLoop :: Opts -> Script -> Expr -> IO ()
 runLoop opts script expr = do
@@ -141,9 +144,9 @@ runLoop opts script expr = do
   runExpr opts expr inputs
   runLoop opts script expr
 
-run :: Opts -> Script -> [String] -> IO ()
-run opts script [] = putStrLn motd >> runInteractive opts script []
-run opts script (exprString : inputs) = do
+run :: Opts -> InputState -> Script -> [String] -> IO ()
+run opts hd script [] = putStrLn motd >> runInteractive opts hd script []
+run opts hd script (exprString : inputs) = do
   (expr, xs) <- (,) <$> parseExpr script exprString <*> parseInputs script inputs
 
   -- no placeholder (run once), no inputs (use stdin), or run once w/ CLI args
@@ -156,12 +159,15 @@ main :: IO ()
 main = do
   opts <- getOpts
 
-  -- load all the scripts to create a single defs map
+  -- load all the scripts to create a single map
   script <- baseScript >>= (`loadScripts` scriptFiles opts)
 
   -- use systems
   let script' = foldl' useSystem script $ useSystems opts
-   in run opts script (exprStrings opts)
+   in bracketOnError (initializeInput defaultSettings) cancelInput (runInput opts script)
+
+  where
+    runInput opts script hd = run opts hd script (exprStrings opts)
         `catches` [ Handler $ \(ex :: IOException) -> return (),
                     Handler $ \(ex :: Error) -> print ex
                   ]

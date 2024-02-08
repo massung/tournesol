@@ -27,6 +27,7 @@ dependencies:
 - errors
 - extra
 - file-embed
+- haskeline
 - mtl
 - parsec
 - vector
