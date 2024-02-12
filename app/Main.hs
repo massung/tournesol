@@ -47,7 +47,7 @@ motd = printf "Tournesol v%d.%d.%d, (c) Jeffrey Massung" major minor patch
   where
     major = 0 :: Int
     minor = 9 :: Int
-    patch = 5 :: Int
+    patch = 8 :: Int
 
 getOpts =
   cmdArgs $
