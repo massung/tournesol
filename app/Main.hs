@@ -16,6 +16,7 @@ import Calc.Units hiding (name)
 import Control.Applicative
 import Control.Concurrent
 import Control.Exception
+import Control.Monad
 import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Either.Extra
