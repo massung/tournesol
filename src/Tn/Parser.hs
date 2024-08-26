@@ -99,7 +99,9 @@ baseUnits dim = do
   getState <&> declUnits units (Just pos) >>= putScript
 
 exprParser :: Parsec String Script Expr
-exprParser = buildExpressionParser exprTable exprTerm
+exprParser = do
+  buildExpressionParser exprTable exprTerm
+    <|> (do eof; return Ans)
 
 exprTerm :: Parsec String Script Expr
 exprTerm = do
@@ -107,6 +109,7 @@ exprTerm = do
     -- <|> brackets lexer exprApply
     <|> Term
     <$> scalarParser
+    <|> (do reserved lexer "ans"; return Ans)
     <|> (do reserved lexer "true"; return $ Term 1)
     <|> (do reserved lexer "false"; return $ Term 0)
 

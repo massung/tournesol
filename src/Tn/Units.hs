@@ -90,18 +90,22 @@ verifyUnits (Units m) = all (== 1) $ M.foldlWithKey' countDims mempty m
    in and $ M.intersectionWith (==) da db
 
 -- create derived units from a base unit
-derivedUnits :: [(String, Conv)] -> Unit -> [Unit]
-derivedUnits convs u = u : [derivedUnit p c | (p, c) <- convs]
+derivedUnits :: [(String, String, Conv)] -> Unit -> [Unit]
+derivedUnits convs u = u : [derivedUnit n p c | (n, p, c) <- convs]
   where
     base :: String
     base = unintern u._symbol
 
-    derivedUnit :: String -> Conv -> Unit
-    derivedUnit p c = u {_symbol = intern (p ++ base), _conv = c}
+    derivedUnit :: String -> String -> Conv -> Unit
+    derivedUnit n p c = u {_symbol = intern (p ++ base), _name = n ++ u._name, _conv = c}
 
 -- create metric units derived from a base unit
 siUnits :: Unit -> [Unit]
 siUnits = derivedUnits siConvs
+
+-- create metric units that are < 1 from a base unit
+subSIUnits :: Unit -> [Unit]
+subSIUnits = derivedUnits [c | c@(_, _, Linear n) <- siConvs, n >= 1]
 
 -- create storage units derived from a base unit
 storageUnits :: Unit -> [Unit]

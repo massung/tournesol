@@ -1,17 +1,17 @@
 module Tn.Eval where
 
-import Text.Parsec hiding (State)
 import Tn.Error
 import Tn.Expr
 import Tn.Scalar
 import Tn.Units
 
-type EvalResultT = ExceptT EvalError (State [Scalar])
+type EvalResultT = ExceptT EvalError (State Scalar)
 
-eval :: [Scalar] -> Expr -> Either EvalError Scalar
-eval args expr = evalState (runExceptT $ evalExpr expr) args
+eval :: Scalar -> Expr -> Either EvalError Scalar
+eval ans expr = evalState (runExceptT $ evalExpr expr) ans
 
 evalExpr :: Expr -> EvalResultT Scalar
+evalExpr Ans = get
 evalExpr (Term x) = return x
 evalExpr (Convert to x) = evalConvert x to
 evalExpr (Unary f x) = evalUnary f x

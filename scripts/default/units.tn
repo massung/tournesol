@@ -1,17 +1,33 @@
-#const pi = 3.1415926535897932
 
-# base dimensions and units
-dim length = base si m
-dim mass = base si g
-dim time = base s
-#dim disk = base storage B
+# base units
+unit base radians = angle rad
+unit base seconds = duration s
+unit base celcius = temperature Tc
 
-dim speed = length / time
+# base units (metric)
+unit base farads = capacitance si F
+unit base coulombs = charge si C
+unit base amperes = current si A
+unit base ohms = current si O
+unit base volts = voltage si V
+unit base joules = energy si J
+unit base newtons = force si N
+unit base hertz = frequency hz
+unit base meters = length si m
+unit base grams = mass si g
+unit base watts = power si W
+unit base pascals = pressure si Pa
+unit base liters = volume si L
 
-# time units
+# fundamental constants
+const C = 299792458 m/s
+const PI = 3.141592653589793
+
+# angle units
+unit grad = 200 grad / [PI : rad]
+unit deg = 180 deg / [PI : rad]
+
+# duration units
 unit min = 60 s
 unit hr = 60 min
 unit day = 24 hr
-
-# disk units
-#unit bit = 1/8 B

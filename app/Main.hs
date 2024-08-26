@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
@@ -9,7 +10,6 @@ import System.Console.Haskeline
 import System.Console.Haskeline.IO
 import Text.Parsec (runParser)
 import Tn.Eval
-import Tn.Expr
 import Tn.Parser
 import Tn.Scalar
 import Tn.Script
@@ -66,29 +66,34 @@ printFormat opts (Scalar x _) = "%0." ++ prec ++ (if sciNotation opts then "g" e
         then "0"
         else show (fromMaybe 2 $ precision opts)
 
-printAns :: Opts -> Scalar -> IO ()
-printAns _ (InvalidScalar e) = print e
-printAns opts x@(Scalar _ u) =
+printAns :: Opts -> Scalar -> IO Scalar
+printAns _ ans@(InvalidScalar e) = print e >> return ans
+printAns opts ans@(Scalar _ u) = do
   if isJust u
-    then printf (printFormat opts x ++ " %U\n") x x
-    else printf (printFormat opts x ++ "\n") x
+    then printf (printFormat opts ans ++ " %U\n") ans ans
+    else printf (printFormat opts ans ++ "\n") ans
+  return ans
 
-prompt :: Opts -> InputState -> Script -> IO Expr
-prompt opts hd script = do
-  queryInput hd (getInputLine ">> ") >>= \case
-    Nothing -> prompt opts hd script
-    Just s ->
-      let expr = runParser exprParser script "" s
-       in either (\e -> print e >> prompt opts hd script) return expr
+runExpr :: Opts -> Script -> Scalar -> String -> IO Scalar
+runExpr opts script ans s =
+  case runParser exprParser script "" s of
+    Left err -> print err >> return ans
+    Right expr -> case eval ans expr of
+      Left err -> print err >> return ans
+      Right ans' -> printAns opts ans'
 
-repl :: Opts -> Script -> [Scalar] -> InputState -> IO ()
-repl opts script xs hd = do
-  expr <- prompt opts hd script
+repl :: Opts -> Script -> Scalar -> InputState -> IO ()
+repl opts script ans is = do
+  queryInput is (getInputLine ">> ") >>= \case
+    Nothing -> repl opts script ans is
+    Just s -> do
+      ans' <- runExpr opts script ans s
+      repl opts script ans' is
 
-  -- catch exceptions during evaluation
-  case eval xs expr of
-    Left err -> print err >> repl opts script xs hd
-    Right ans -> printAns opts ans >> repl opts script [ans] hd
+runInteractive :: Opts -> Script -> IO InputState -> IO ()
+runInteractive opts script is = do
+  putStrLn motd
+  bracketOnError is cancelInput $ repl opts script 0
 
 main :: IO ()
 main = do
@@ -98,8 +103,7 @@ main = do
   let inputState = initializeInput defaultSettings
       script = defaultScript
 
-  -- show the motd
-  putStrLn motd
-
-  -- run the program or repl
-  bracketOnError inputState cancelInput $ repl opts script []
+  -- run supplied expressions or enter repl
+  case opts.exprStrings of
+    [] -> runInteractive opts script inputState
+    exprs -> mapM_ (runExpr opts script 0) exprs

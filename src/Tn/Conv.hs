@@ -43,34 +43,34 @@ instance Semigroup Conv where
 instance Monoid Conv where
   mempty = Base
 
-siConvs :: [(String, Conv)]
+siConvs :: [(String, String, Conv)]
 siConvs =
-  [ ("a", Linear 1e18),
-    ("f", Linear 1e15),
-    ("p", Linear 1e12),
-    ("n", Linear 1e9),
-    ("u", Linear 1e6),
-    ("m", Linear 1e3),
-    ("c", Linear 1e2),
-    ("d", Linear 1e1),
-    ("da", Linear 1e-1),
-    ("h", Linear 1e-2),
-    ("k", Linear 1e-3),
-    ("M", Linear 1e-6),
-    ("G", Linear 1e-9),
-    ("T", Linear 1e-12),
-    ("P", Linear 1e-15),
-    ("E", Linear 1e-18)
+  [ ("atto", "a", Linear 1e18),
+    ("femto", "f", Linear 1e15),
+    ("pico", "p", Linear 1e12),
+    ("nano", "n", Linear 1e9),
+    ("micro", "u", Linear 1e6),
+    ("milli", "m", Linear 1e3),
+    ("centi", "c", Linear 1e2),
+    ("deci", "d", Linear 1e1),
+    ("deca", "da", Linear 1e-1),
+    ("hecto", "h", Linear 1e-2),
+    ("kilo", "k", Linear 1e-3),
+    ("mega", "M", Linear 1e-6),
+    ("giga", "G", Linear 1e-9),
+    ("tera", "T", Linear 1e-12),
+    ("peta", "P", Linear 1e-15),
+    ("exa", "E", Linear 1e-18)
   ]
 
-storageConvs :: [(String, Conv)]
+storageConvs :: [(String, String, Conv)]
 storageConvs =
-  [ ("k", Linear (1 % 1024)),
-    ("M", Linear (1 % 1048576)),
-    ("G", Linear (1 % 1073741824)),
-    ("T", Linear (1 % 1099511627776)),
-    ("P", Linear (1 % 1125899906842624)),
-    ("E", Linear (1 % 1152921504606846976))
+  [ ("kilo", "k", Linear (1 % 1024)),
+    ("mega", "M", Linear (1 % 1048576)),
+    ("giga", "G", Linear (1 % 1073741824)),
+    ("tera", "T", Linear (1 % 1099511627776)),
+    ("peta", "P", Linear (1 % 1125899906842624)),
+    ("exa", "E", Linear (1 % 1152921504606846976))
   ]
 
 -- raises a conversion by a power

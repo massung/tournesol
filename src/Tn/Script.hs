@@ -127,8 +127,8 @@ defaultUnits =
       Unit {_symbol = "acre", _name = "acres", _dim = _area, _conv = Linear (78125 % 316160658)}
     ],
     -- duration units
-    [ Unit {_symbol = "s", _name = "seconds", _dim = _duration, _conv = Base},
-      Unit {_symbol = "min", _name = "minutes", _dim = _duration, _conv = Linear (1 % 60)},
+    subSIUnits Unit {_symbol = "s", _name = "seconds", _dim = _duration, _conv = Base},
+    [ Unit {_symbol = "min", _name = "minutes", _dim = _duration, _conv = Linear (1 % 60)},
       Unit {_symbol = "hr", _name = "hours", _dim = _duration, _conv = Linear (1 % 3600)},
       Unit {_symbol = "day", _name = "days", _dim = _duration, _conv = Linear (1 % 86400)}
     ],

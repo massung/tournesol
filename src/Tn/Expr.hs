@@ -6,7 +6,8 @@ import Tn.Scalar
 import Tn.Units
 
 data Expr
-  = Term Scalar
+  = Ans
+  | Term Scalar
   | Convert Units Expr
   | Unary (Scalar -> Either EvalError Scalar) Expr
   | Binary (Scalar -> Scalar -> Either EvalError Scalar) Expr Expr

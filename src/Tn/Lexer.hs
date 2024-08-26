@@ -20,7 +20,7 @@ lexer = makeTokenParser lang
           identLetter = letter,
           opStart = oneOf ":$%?+-*/^<>=!@|&",
           opLetter = oneOf "+-*/<>=!@|&",
-          reservedNames = ["as", "base", "dim", "func", "inf", "si", "storage", "to", "unit"],
+          reservedNames = ["ans", "base", "dim", "func", "inf", "si", "storage", "to", "unit"],
           reservedOpNames = [":", "+", "-", "*", "/", "^", "=", "<", ">", "<=", ">=", "<>"],
           caseSensitive = True
         }
