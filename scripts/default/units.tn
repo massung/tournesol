@@ -1,0 +1,17 @@
+#const pi = 3.1415926535897932
+
+# base dimensions and units
+dim length = base si m
+dim mass = base si g
+dim time = base s
+#dim disk = base storage B
+
+dim speed = length / time
+
+# time units
+unit min = 60 s
+unit hr = 60 min
+unit day = 24 hr
+
+# disk units
+#unit bit = 1/8 B
