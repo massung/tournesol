@@ -69,7 +69,7 @@ printFormat opts (Scalar x _) = "%0." ++ prec ++ (if sciNotation opts then "g" e
 printAns :: Opts -> Scalar -> IO Scalar
 printAns _ ans@(InvalidScalar e) = print e >> return ans
 printAns opts ans@(Scalar _ u) = do
-  if isJust u
+  if isJust u && not opts.noUnits
     then printf (printFormat opts ans ++ " %U\n") ans ans
     else printf (printFormat opts ans ++ "\n") ans
   return ans
