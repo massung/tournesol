@@ -19,7 +19,6 @@ import Text.Parsec.Expr as Expr
 import Text.Parsec.Token
 import Tn.Conv
 import Tn.Dims
-import Tn.Error
 import Tn.Expr
 import Tn.Lexer
 import Tn.Scalar
@@ -135,7 +134,7 @@ exprConvert = do
 exprTable :: OperatorTable String Script Identity Expr
 exprTable =
   [ [prefix "-" negate, prefix "+" id],
-    -- [binary "^" powScalar AssocLeft],
+    [binary "^" powScalar AssocLeft],
     [binary "*" (*) AssocLeft, binary "/" (/) AssocLeft],
     [binary "+" (+) AssocLeft, binary "-" (-) AssocLeft],
     [binary "==" (cmpOp (==)) AssocLeft, binary "/=" (cmpOp (/=)) AssocLeft, binary "<" (cmpOp (<)) AssocLeft, binary ">" (cmpOp (>)) AssocLeft, binary "<=" (cmpOp (<=)) AssocLeft, binary ">=" (cmpOp (>=)) AssocLeft],

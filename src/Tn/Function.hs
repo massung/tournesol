@@ -2,8 +2,6 @@
 
 module Tn.Function where
 
-import Control.Monad
-import qualified Data.Map.Strict as M
 import Tn.Dims
 import Tn.Error
 import Tn.Scalar
@@ -12,7 +10,7 @@ import Tn.Units hiding (_pi)
 import Prelude hiding (Any, Arg)
 
 -- expression function
-type Function = [Scalar] -> Either Error Scalar
+type Function = [Scalar] -> Either EvalError Scalar
 
 -- function argument
 data Arg

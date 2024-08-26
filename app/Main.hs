@@ -1,14 +1,16 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main (main) where
 
 import System.Console.CmdArgs
 import System.Console.Haskeline
 import System.Console.Haskeline.IO
-import Tn.Error
+import Text.Parsec (runParser)
 import Tn.Eval
+import Tn.Expr
+import Tn.Parser
 import Tn.Scalar
 import Tn.Script
 
@@ -51,11 +53,12 @@ getOpts =
 motd :: String
 motd = printf "Tournesol v%d.%d.%d, (c) Jeffrey Massung" major minor patch
   where
-    major = 1 :: Int
-    minor = 0 :: Int
+    major = 0 :: Int
+    minor = 1 :: Int
     patch = 0 :: Int
 
 printFormat :: Opts -> Scalar -> String
+printFormat _ (InvalidScalar e) = show e
 printFormat opts (Scalar x _) = "%0." ++ prec ++ (if sciNotation opts then "g" else "f")
   where
     prec =
@@ -64,36 +67,28 @@ printFormat opts (Scalar x _) = "%0." ++ prec ++ (if sciNotation opts then "g" e
         else show (fromMaybe 2 $ precision opts)
 
 printAns :: Opts -> Scalar -> IO ()
+printAns _ (InvalidScalar e) = print e
 printAns opts x@(Scalar _ u) =
   if isJust u
     then printf (printFormat opts x ++ " %U\n") x x
     else printf (printFormat opts x ++ "\n") x
 
-prompt :: Opts -> InputState -> IO String
-prompt opts hd = do
-  s <- queryInput hd (getInputLine ">> ")
-  maybe (prompt opts hd) return s
+prompt :: Opts -> InputState -> Script -> IO Expr
+prompt opts hd script = do
+  queryInput hd (getInputLine ">> ") >>= \case
+    Nothing -> prompt opts hd script
+    Just s ->
+      let expr = runParser exprParser script "" s
+       in either (\e -> print e >> prompt opts hd script) return expr
 
-handlers :: IO () -> [Handler ()]
-handlers onError =
-  [ Handler $ \(_ :: IOException) -> onError,
-    Handler $ \(e :: Error) -> print e >> onError
-  ]
-
-runInteractive :: Opts -> Script -> [Scalar] -> InputState -> IO ()
-runInteractive opts script xs hd = do
-  input <- prompt opts hd
+repl :: Opts -> Script -> [Scalar] -> InputState -> IO ()
+repl opts script xs hd = do
+  expr <- prompt opts hd script
 
   -- catch exceptions during evaluation
-  ioResult <- try (evaluate $ eval script xs input)
-
-  --
-  case ioResult of
-    Left (ex :: ArithException) -> print ex >> runInteractive opts script xs hd
-    Right (Left err) -> print err >> runInteractive opts script xs hd
-    Right (Right ans) -> do
-      printAns opts ans
-      runInteractive opts script [ans] hd
+  case eval xs expr of
+    Left err -> print err >> repl opts script xs hd
+    Right ans -> printAns opts ans >> repl opts script [ans] hd
 
 main :: IO ()
 main = do
@@ -103,5 +98,8 @@ main = do
   let inputState = initializeInput defaultSettings
       script = defaultScript
 
+  -- show the motd
+  putStrLn motd
+
   -- run the program or repl
-  bracketOnError inputState cancelInput $ runInteractive opts script []
+  bracketOnError inputState cancelInput $ repl opts script []

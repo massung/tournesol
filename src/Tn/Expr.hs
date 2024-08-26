@@ -8,7 +8,7 @@ import Tn.Units
 data Expr
   = Term Scalar
   | Convert Units Expr
-  | Unary (Scalar -> Either Error Scalar) Expr
-  | Binary (Scalar -> Scalar -> Either Error Scalar) Expr Expr
+  | Unary (Scalar -> Either EvalError Scalar) Expr
+  | Binary (Scalar -> Scalar -> Either EvalError Scalar) Expr Expr
 
 --  | Apply Function [Expr]

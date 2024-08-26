@@ -1,32 +1,24 @@
 module Tn.Error where
 
-import Text.Parsec (ParseError)
-import Tn.Dims
-import Tn.Units
-
-data Error
-  = NoExpr
-  | NoFunction String
-  | ExprError ParseError
-  | ConversionError Units Units
-  | WrongArity
-  | WrongDims Dims Dims
+data NumericalError
+  = DivByZero
+  | DisparateUnits
   | IllegalExponent
-  | ReadError ParseError
-  | Error IOException
-  | ArithError ArithException
+
+instance Show NumericalError where
+  show DivByZero = "division by zero"
+  show DisparateUnits = "disparate units"
+  show IllegalExponent = "illegal exponent"
+
+data EvalError
+  = ArityMismatch
+  | DimensionsMismatch
   deriving (Eq)
 
-instance Exception Error
+instance Show EvalError where
+  show ArityMismatch = "arity mismatch"
+  show DimensionsMismatch = "disparate dimensions"
 
-instance Show Error where
-  show NoExpr = "no expression"
-  show (NoFunction f) = unwords ["no function:", f]
-  show (ExprError e) = show e
-  show (ConversionError from to) = unwords ["no conversion possible from", show from, "to", show to]
-  show WrongArity = "wrong arity"
-  show (WrongDims from to) = unwords ["wrong dimensions; got", show from, "expected", show to]
-  show IllegalExponent = "illegal exponent"
-  show (ReadError e) = show e
-  show (Error e) = show e
-  show (ArithError e) = show e
+instance Exception NumericalError
+
+instance Exception EvalError
