@@ -1,12 +1,14 @@
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Tn.Function where
 
+import Data.Symbol
+import Tn.Builtins
 import Tn.Dims
 import Tn.Error
 import Tn.Scalar
-import Tn.Script
-import Tn.Units hiding (_pi)
+import Tn.Units
 import Prelude hiding (Any, Arg)
 
 -- expression function
@@ -15,47 +17,49 @@ type Function = [Scalar] -> Either EvalError Scalar
 -- function argument
 data Arg
   = Any
+  | Untyped
   | Typed Dims
 
+_if :: [Scalar] -> Either EvalError Scalar
+_if [Scalar test Nothing, t, e] = Right $ if test == 0 then e else t
+_if [_, _, _] = Left InvalidArg
+_if _ = Left ArityMismatch
+
+defaultFunctions :: [(Symbol, Function)]
+defaultFunctions =
+  [ ("if", wrapFunc _if [Untyped, Any, Any]),
+    -- num functions
+    ("abs", unaryFunc abs Any),
+    ("recip", unaryFunc recip Any),
+    ("signum", unaryFunc signum Any),
+    ("sqrt", unaryFunc (`powScalar` 0.5) Any),
+    -- floating functions
+    ("sin", unaryFunc (mapFloating sin) $ Typed $ Dims [(_angle, 1)]),
+    ("cos", unaryFunc (mapFloating cos) $ Typed $ Dims [(_angle, 1)]),
+    ("tan", unaryFunc (mapFloating tan . (Units [(_rad, 1)] `convertTo`)) $ Typed $ Dims [(_angle, 1)]),
+    ("sinh", unaryFunc (mapFloating sinh) $ Typed $ Dims [(_angle, 1)]),
+    ("cosh", unaryFunc (mapFloating cosh) $ Typed $ Dims [(_angle, 1)]),
+    ("tanh", unaryFunc (mapFloating tanh) $ Typed $ Dims [(_angle, 1)]),
+    ("asin", unaryFunc (mapFloating asin) Untyped),
+    ("acos", unaryFunc (mapFloating acos) Untyped),
+    ("atan", unaryFunc (mapFloating atan) Untyped),
+    ("asinh", unaryFunc (mapFloating asinh) Untyped),
+    ("acosh", unaryFunc (mapFloating acosh) Untyped),
+    ("atanh", unaryFunc (mapFloating atanh) Untyped)
+    -- realfrac functions
+    -- ("ceil", unaryFunc (mapIntegral ceiling) Any),
+    -- ("exp", unaryFunc (mapFloating exp) Untyped),
+    -- ("floor", unaryFunc (mapFloating floor) Any),
+    -- ("log", unaryFunc (mapFloating log) Untyped),
+    -- ("round", unaryFunc (mapFloating round) Any),
+    -- ("truncate", unaryFunc (mapFloating truncate) Any)
+  ]
+
 {-
-funcMap =
-  M.fromList
-    [ ("if", func _if [Any, Any, Any]),
-      ("abs", func _abs [Any]),
-      ("signum", func _signum [Any]),
-      ("sqrt", func _sqrt [Any]),
-      ("log", func _log [Typed mempty]),
-      ("exp", func _exp [Typed mempty]),
-      ("truncate", func _truncate [Any]),
-      ("floor", func _floor [Any]),
-      ("ceil", func _ceiling [Any]),
-      ("round", func _round [Any]),
       ("pi", func _pi []),
-      ("sin", func _sin $ dims [Angle]),
-      ("cos", func _cos $ dims [Angle]),
-      ("tan", func _tan $ dims [Angle]),
-      ("sinh", func _sinh $ dims [Angle]),
-      ("cosh", func _cosh $ dims [Angle]),
-      ("tanh", func _tanh $ dims [Angle]),
-      ("asin", func _asin [Typed mempty]),
-      ("acos", func _acos [Typed mempty]),
-      ("atan", func _atan [Typed mempty]),
-      ("asinh", func _asinh [Typed mempty]),
-      ("acosh", func _acosh [Typed mempty]),
-      ("atanh", func _atanh [Typed mempty])
     ]
   where
     dims xs = [Typed $ baseDims x | x <- xs]
-
-func :: ([Scalar] -> Either Error Scalar) -> [Arg] -> ([Scalar] -> Either Error Scalar)
-func f args xs = zipWithM mapArg args xs >>= f
-  where
-    mapArg Any x = Right x
-    mapArg (Typed d) x@(Scalar _ u) =
-      let d' = dims u
-       in if d' == d
-            then Right x
-            else Left $ WrongDims d' d
 
 -- unary function
 unaryDef f = fmap $ fromReal . f . fromRational . toRational
@@ -131,3 +135,28 @@ _acosh _ = Left WrongArity
 _atanh [x] = unaryDef atanh (Right x) >>= (`convertTo` radians)
 _atanh _ = Left WrongArity
 -}
+
+wrapFunc :: Function -> [Arg] -> Function
+wrapFunc f args xs = zipWithM mapArg xs args >>= f
+  where
+    mapArg :: Scalar -> Arg -> Either EvalError Scalar
+    mapArg x@(Scalar _ _) Any = Right x
+    mapArg x@(Scalar _ Nothing) Untyped = Right x
+    mapArg x@(Scalar _ (Just u)) (Typed d)
+      | dims u == d = Right x
+      | otherwise = Left InvalidArg
+    mapArg _ _ = Left InvalidArg
+
+unaryFunc :: (Scalar -> Scalar) -> Arg -> Function
+unaryFunc f arg = wrapFunc func [arg]
+  where
+    func [x@(Scalar _ _)] = Right $ f x
+    func [_] = Left InvalidArg
+    func _ = Left ArityMismatch
+
+binaryFunc :: (Scalar -> Scalar -> Scalar) -> Arg -> Arg -> Function
+binaryFunc f xarg yarg = wrapFunc func [xarg, yarg]
+  where
+    func [x@(Scalar _ _), y@(Scalar _ _)] = Right $ f x y
+    func [_, _] = Left InvalidArg
+    func _ = Left ArityMismatch

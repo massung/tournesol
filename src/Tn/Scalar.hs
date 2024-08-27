@@ -96,8 +96,11 @@ instance Num Scalar where
   abs = mapScalar abs
   signum = mapScalar signum . dropUnits
 
+quietNaN :: Rational
+quietNaN = unsafeCoerce (0x7ff8000000000000 :: Word64)
+
 instance Real Scalar where
-  toRational (InvalidScalar _) = unsafeCoerce (0x7ff8000000000000 :: Word64) -- quiet nan
+  toRational (InvalidScalar _) = quietNaN
   toRational (Scalar x _) = x
 
 instance Fractional Scalar where
@@ -114,6 +117,9 @@ instance Fractional Scalar where
     where
       recipUnits (Units m) = Units $ M.map negate m
   recip x = x
+
+mapFloating :: (Double -> Double) -> (Scalar -> Scalar)
+mapFloating f = mapScalar $ toRational . (f . fromRational :: Rational -> Double)
 
 dropUnits :: Scalar -> Scalar
 dropUnits x@(InvalidScalar _) = x

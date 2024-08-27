@@ -89,7 +89,7 @@ verifyUnits (Units m) = all (== 1) $ M.foldlWithKey' countDims mempty m
       (Dims db) = dims b
    in and $ M.intersectionWith (==) da db
 
--- create derived units from a base unit
+-- create derived (eg, SI) units from a base unit
 derivedUnits :: [(String, String, Conv)] -> Unit -> [Unit]
 derivedUnits convs u = u : [derivedUnit n p c | (n, p, c) <- convs]
   where

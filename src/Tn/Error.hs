@@ -12,12 +12,12 @@ instance Show NumericalError where
 
 data EvalError
   = ArityMismatch
-  | DimensionsMismatch
+  | InvalidArg
   deriving (Eq)
 
 instance Show EvalError where
   show ArityMismatch = "arity mismatch"
-  show DimensionsMismatch = "disparate dimensions"
+  show InvalidArg = "invalid argument"
 
 instance Exception NumericalError
 

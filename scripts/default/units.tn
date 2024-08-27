@@ -1,23 +1,23 @@
 
 # base units
-unit base radians = angle rad
-unit base seconds = duration s
-unit base celcius = temperature Tc
+unit base rad = angle
+unit base s = duration
+unit base Tc = temperature
 
 # base units (metric)
-unit base farads = capacitance si F
-unit base coulombs = charge si C
-unit base amperes = current si A
-unit base ohms = current si O
-unit base volts = voltage si V
-unit base joules = energy si J
-unit base newtons = force si N
-unit base hertz = frequency hz
-unit base meters = length si m
-unit base grams = mass si g
-unit base watts = power si W
-unit base pascals = pressure si Pa
-unit base liters = volume si L
+unit base si F = capacitance
+unit base si C = charge
+unit base si A = current
+unit base si O = current
+unit base si V = voltage
+unit base si J = energy
+unit base si N = force
+unit base si hz = frequency
+unit base si m = length
+unit base si g = mass
+unit base si W = power
+unit base si Pa = pressure
+unit base si L = volume
 
 # fundamental constants
 const C = 299792458 m/s

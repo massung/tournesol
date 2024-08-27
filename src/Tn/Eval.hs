@@ -2,6 +2,7 @@ module Tn.Eval where
 
 import Tn.Error
 import Tn.Expr
+import Tn.Function
 import Tn.Scalar
 import Tn.Units
 
@@ -16,8 +17,7 @@ evalExpr (Term x) = return x
 evalExpr (Convert to x) = evalConvert x to
 evalExpr (Unary f x) = evalUnary f x
 evalExpr (Binary f x y) = evalBinary f x y
-
--- evalExpr (Apply f xs) = evalApply f xs
+evalExpr (Apply f xs) = evalApply f xs
 
 evalConvert :: Expr -> Units -> EvalResultT Scalar
 evalConvert x to = evalExpr x <&> convertTo to
@@ -33,7 +33,7 @@ evalBinary f x y = do
   y' <- evalExpr y
   either throwError return $ f x' y'
 
--- evalApply :: Function -> [Expr] -> EvalResultT Scalar
--- evalApply f xs = do
---   xs' <- sequence [evalExpr x | x <- xs]
---   either throwError return $ f xs'
+evalApply :: Function -> [Expr] -> EvalResultT Scalar
+evalApply f xs = do
+  xs' <- sequence [evalExpr x | x <- xs]
+  either throwError return $ f xs'

@@ -82,22 +82,6 @@ putScript :: Either String Script -> Parsec String Script ()
 putScript (Left err) = fail err
 putScript (Right scr) = putState scr
 
-baseUnits :: Dim -> Parsec String Script ()
-baseUnits dim = do
-  reserved lexer "base"
-
-  -- base unit name
-  pos <- getPosition
-  si <- optionMaybe $ reserved lexer "si"
-  name <- identifier lexer
-
-  -- create the base unit and optional derived units
-  let base = Unit {_symbol = intern name, _name = name, _dim = dim, _conv = Base}
-      units = if isJust si then siUnits base else [base]
-
-  -- declare all the units
-  getState <&> declUnits units (Just pos) >>= putScript
-
 exprParser :: Parsec String Script Expr
 exprParser = do
   buildExpressionParser exprTable exprTerm
@@ -106,7 +90,7 @@ exprParser = do
 exprTerm :: Parsec String Script Expr
 exprTerm = do
   exprParens
-    -- <|> brackets lexer exprApply
+    <|> brackets lexer exprApply
     <|> Term
     <$> scalarParser
     <|> (do reserved lexer "ans"; return Ans)
@@ -126,13 +110,14 @@ exprConvert = do
   reservedOp lexer ":" <|> reserved lexer "to"
   unitsParser
 
--- exprApply = do
---   script <- getState
---   s <- identifier lexer
---   xs <- sepBy exprParser (lexeme lexer $ char ';')
---   case M.lookup s $ funcs script of
---     Just f -> return $ Call f xs
---     Nothing -> fail $ s ++ " ?"
+exprApply :: ParsecT String Script Identity Expr
+exprApply = do
+  script <- getState
+  func <- identifier lexer <&> intern
+  xs <- sepBy exprParser (lexeme lexer $ char ';')
+  case M.lookup func script._funcs of
+    Just (f, _) -> return $ Apply f xs
+    Nothing -> fail "unknown function"
 
 exprTable :: OperatorTable String Script Identity Expr
 exprTable =

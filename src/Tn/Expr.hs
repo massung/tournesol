@@ -11,5 +11,4 @@ data Expr
   | Convert Units Expr
   | Unary (Scalar -> Either EvalError Scalar) Expr
   | Binary (Scalar -> Scalar -> Either EvalError Scalar) Expr Expr
-
---  | Apply Function [Expr]
+  | Apply Function [Expr]
