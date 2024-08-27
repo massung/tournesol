@@ -53,9 +53,8 @@ instance Show Units where
           then show u ++ "^" ++ show (numerator n)
           else show u ++ "^" ++ show (fromRational n :: Double)
 
--- reciprocol of <>
-(</>) :: Units -> Units -> Units
-(</>) a (Units m) = a <> Units (M.map negate m)
+instance Disjoin Units where
+  (</>) a (Units m) = a <> Units (M.map negate m)
 
 -- returns the fundamental dimensions of the units
 dims :: Units -> Dims

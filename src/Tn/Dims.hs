@@ -48,6 +48,12 @@ instance Semigroup Dims where
 instance Monoid Dims where
   mempty = Dims M.empty
 
+class (Semigroup a) => Disjoin a where
+  (</>) :: a -> a -> a
+
+instance Disjoin Dims where
+  (</>) a (Dims b) = a <> Dims (M.map negate b)
+
 fundamentalDims :: Dim -> Dims
 fundamentalDims dim@(Fundamental _) = Dims [(dim, 1)]
 fundamentalDims (Derived _ (Dims m)) = M.foldlWithKey' reduceDims mempty m

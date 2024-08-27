@@ -26,32 +26,26 @@ import Tn.Script
 import Tn.Units
 import Prelude hiding (Infix, Prefix, try)
 
-rationalParser :: Parsec String Script Rational
-rationalParser = either fromInteger toRational <$> naturalOrFloat lexer
+dimsParser :: Parsec String Script Dims
+dimsParser = buildExpressionParser unitsOpTable (mconcat <$> many1 dimsTerm)
 
-exponentParser :: Parsec String Script Rational
-exponentParser = option 1 $ do
-  _ <- lexeme lexer $ char '^'
-  s <- signParser
-  e <- rationalParser
-  return $ e * s
+dimsTerm :: Parsec String Script Dims
+dimsTerm = do
+  scr <- getState
+  pos <- getPosition
 
-signParser :: Parsec String Script Rational
-signParser = option 1 (neg <|> pos)
-  where
-    neg = reservedOp lexer "-" >> return (-1)
-    pos = reservedOp lexer "+" >> return 1
+  -- parse the unit symbol and optional exponent
+  d <- identifier lexer <&> intern
+  e <- exponentParser
 
-unitsExprTable :: OperatorTable String Script Identity Units
-unitsExprTable =
-  [ [ Expr.Infix (do reservedOp lexer "*"; return (<>)) AssocLeft,
-      Expr.Infix (do reservedOp lexer "/"; return (</>)) AssocLeft
-    ]
-  ]
+  -- ensure the unit is in the state
+  case M.lookup d scr._dims of
+    Nothing -> fail $ "unknown dimensions " ++ show d ++ " at " ++ show pos
+    Just (d', _) -> return $ Dims [(d', e)]
 
 unitsParser :: Parsec String Script Units
 unitsParser = do
-  units <- buildExpressionParser unitsExprTable (mconcat <$> many1 unitsTerm)
+  units <- buildExpressionParser unitsOpTable (mconcat <$> many1 unitsTerm)
   if verifyUnits units
     then return units
     else fail "invalid units"
@@ -78,24 +72,17 @@ scalarParser = do
     Left i -> Scalar (fromIntegral i) u
     Right f -> Scalar (toRational f) u
 
-putScript :: Either String Script -> Parsec String Script ()
-putScript (Left err) = fail err
-putScript (Right scr) = putState scr
-
 exprParser :: Parsec String Script Expr
-exprParser = do
-  buildExpressionParser exprTable exprTerm
-    <|> (do eof; return Ans)
+exprParser = buildExpressionParser exprTable exprTerm <|> (do eof; return Ans)
 
 exprTerm :: Parsec String Script Expr
-exprTerm = do
+exprTerm =
   exprParens
     <|> brackets lexer exprApply
-    <|> Term
-    <$> scalarParser
     <|> (do reserved lexer "ans"; return Ans)
     <|> (do reserved lexer "true"; return $ Term 1)
     <|> (do reserved lexer "false"; return $ Term 0)
+    <|> (scalarParser <&> Term)
 
 exprParens :: Parsec String Script Expr
 exprParens = do
@@ -113,9 +100,9 @@ exprConvert = do
 exprApply :: ParsecT String Script Identity Expr
 exprApply = do
   script <- getState
-  func <- identifier lexer <&> intern
+  funcName <- identifier lexer <&> intern
   xs <- sepBy exprParser (lexeme lexer $ char ';')
-  case M.lookup func script._funcs of
+  case M.lookup funcName script._funcs of
     Just (f, _) -> return $ Apply f xs
     Nothing -> fail "unknown function"
 
@@ -125,7 +112,7 @@ exprTable =
     [binary "^" powScalar AssocLeft],
     [binary "*" (*) AssocLeft, binary "/" (/) AssocLeft],
     [binary "+" (+) AssocLeft, binary "-" (-) AssocLeft],
-    [binary "==" (cmpOp (==)) AssocLeft, binary "/=" (cmpOp (/=)) AssocLeft, binary "<" (cmpOp (<)) AssocLeft, binary ">" (cmpOp (>)) AssocLeft, binary "<=" (cmpOp (<=)) AssocLeft, binary ">=" (cmpOp (>=)) AssocLeft],
+    [binary "=" (cmpOp (==)) AssocLeft, binary "/=" (cmpOp (/=)) AssocLeft, binary "<" (cmpOp (<)) AssocLeft, binary ">" (cmpOp (>)) AssocLeft, binary "<=" (cmpOp (<=)) AssocLeft, binary ">=" (cmpOp (>=)) AssocLeft],
     [Postfix (do Convert <$> exprConvert)]
   ]
   where
