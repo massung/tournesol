@@ -27,7 +27,7 @@ instance Show Dim where
 
 instance Eq Dim where
   (==) (Fundamental a) (Fundamental b) = a == b
-  (==) (Derived a _) (Derived b _) = a == b
+  (==) (Derived a x) (Derived b y) = a == b || x == y
   (==) _ _ = False
 
 instance Ord Dim where

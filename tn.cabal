@@ -36,6 +36,7 @@ library
       Tn.Lexer
       Tn.Parser
       Tn.Scalar
+      Tn.Scope
       Tn.Script
       Tn.Units
   other-modules:
@@ -90,6 +91,7 @@ test-suite tn-test
     , extra
     , file-embed
     , haskeline
+    , hspec
     , parsec
     , rerebase
     , symbol

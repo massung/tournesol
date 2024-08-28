@@ -10,8 +10,9 @@ import System.Console.Haskeline
 import System.Console.Haskeline.IO
 import Text.Parsec (runParser)
 import Tn.Eval
-import Tn.Parser
+import Tn.Expr
 import Tn.Scalar
+import Tn.Scope
 import Tn.Script
 
 data Opts = Opts
@@ -74,26 +75,26 @@ printAns opts ans@(Scalar _ u) = do
     else printf (printFormat opts ans ++ "\n") ans
   return ans
 
-runExpr :: Opts -> Script -> Scalar -> String -> IO Scalar
-runExpr opts script ans s =
-  case runParser exprParser script "" s of
+runExpr :: Opts -> Scope -> Scalar -> String -> IO Scalar
+runExpr opts scope ans s =
+  case runParser exprParser scope "" s of
     Left err -> print err >> return ans
     Right expr -> case eval ans expr of
       Left err -> print err >> return ans
       Right ans' -> printAns opts ans'
 
-repl :: Opts -> Script -> Scalar -> InputState -> IO ()
-repl opts script ans is = do
+repl :: Opts -> Scope -> Scalar -> InputState -> IO ()
+repl opts scope ans is = do
   queryInput is (getInputLine ">> ") >>= \case
-    Nothing -> repl opts script ans is
+    Nothing -> repl opts scope ans is
     Just s -> do
-      ans' <- runExpr opts script ans s
-      repl opts script ans' is
+      ans' <- runExpr opts scope ans s
+      repl opts scope ans' is
 
-runInteractive :: Opts -> Script -> IO InputState -> IO ()
-runInteractive opts script is = do
+runInteractive :: Opts -> Scope -> IO InputState -> IO ()
+runInteractive opts scope is = do
   putStrLn motd
-  bracketOnError is cancelInput $ repl opts script 0
+  bracketOnError is cancelInput $ repl opts scope 0
 
 main :: IO ()
 main = do
@@ -101,9 +102,9 @@ main = do
 
   -- TODO: load all the scripts
   let inputState = initializeInput defaultSettings
-      script = defaultScript
+      scope = defaultScope
 
   -- run supplied expressions or enter repl
   case opts.exprStrings of
-    [] -> runInteractive opts script inputState
-    exprs -> mapM_ (runExpr opts script 0) exprs
+    [] -> runInteractive opts scope inputState
+    exprs -> mapM_ (runExpr opts scope 0) exprs

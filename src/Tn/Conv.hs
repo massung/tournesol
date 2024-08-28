@@ -43,6 +43,10 @@ instance Semigroup Conv where
 instance Monoid Conv where
   mempty = Base
 
+isBase :: Conv -> Bool
+isBase Base = True
+isBase _ = False
+
 siConvs :: [(String, String, Conv)]
 siConvs =
   [ ("atto", "a", Linear 1e18),
