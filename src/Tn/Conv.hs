@@ -92,10 +92,10 @@ powConv _ _ = error "cannot exponentiate non-linear conversion"
 convToBase :: Rational -> Conv -> Rational
 convToBase n Base = n
 convToBase n (Linear r) = n / r
-convToBase n (Conv from _) = from n
+convToBase n (Conv _ to) = to n
 
 -- apply a conversion to a base rational to return the units value
 convFromBase :: Rational -> Conv -> Rational
 convFromBase n Base = n
 convFromBase n (Linear r) = n * r
-convFromBase n (Conv _ to) = to n
+convFromBase n (Conv from _) = from n

@@ -13,7 +13,6 @@ import Tn.Eval
 import Tn.Expr
 import Tn.Scalar
 import Tn.Scope
-import Tn.Script
 
 data Opts = Opts
   { scriptFiles :: [String],
@@ -42,10 +41,10 @@ getOpts =
       [ "Examples:",
         "  tn '1+2'",
         "  tn '6 ft + 3 in : m'",
-        "  tn '500 N * 10 ft to BTU'",
-        "  tn '10 GB / 2 hr to MB/s'",
-        "  tn '2 * (1500 cm)^2 to acre'",
-        "  tn '30 W * 6 min to J'",
+        "  tn '500 N * 10 ft : BTU'",
+        "  tn '10 GB / 2 hr : MB/s'",
+        "  tn '2 * (1500 cm)^2 : acre'",
+        "  tn '30 W * 6 min : J'",
         "  tn '2 * [sin 45 deg]'",
         "  tn '100 hz * _ m : mph' < values.txt"
       ]
@@ -75,13 +74,16 @@ printAns opts ans@(Scalar _ u) = do
     else printf (printFormat opts ans ++ "\n") ans
   return ans
 
+eval :: String -> Scalar -> Scope -> IO (Either String Scalar)
+eval s ans scope = either (return . Left . show) doIt $ runParser exprParser scope "" s
+  where
+    doIt expr = either (return . Left . show) (return . Right) $ evalExpr ans expr
+
 runExpr :: Opts -> Scope -> Scalar -> String -> IO Scalar
 runExpr opts scope ans s =
-  case runParser exprParser scope "" s of
+  eval s ans scope >>= \case
     Left err -> print err >> return ans
-    Right expr -> case eval ans expr of
-      Left err -> print err >> return ans
-      Right ans' -> printAns opts ans'
+    Right ans' -> printAns opts ans'
 
 repl :: Opts -> Scope -> Scalar -> InputState -> IO ()
 repl opts scope ans is = do

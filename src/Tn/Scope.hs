@@ -21,6 +21,13 @@ data Scope = Scope
     _locals :: M.Map Symbol (Scalar, Maybe SourcePos)
   }
 
+instance Show Scope where
+  show scope =
+    let d = M.size scope._dims
+        u = M.size scope._units
+        f = M.size scope._funcs
+     in printf "Scope with %d Dims, %d Units, %d Funcs" d u f
+
 -- scopes are right-biased
 instance Semigroup Scope where
   (<>) a b =

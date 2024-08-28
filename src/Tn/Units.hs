@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 
 module Tn.Units where
@@ -37,24 +36,10 @@ instance Monoid Units where
   mempty = Units mempty
 
 instance Show Units where
-  show (Units m) =
-    let (num, den) = M.partition (> 0) m
-     in if
-          | null num -> show' den
-          | null den -> show' num
-          | otherwise -> show' num ++ "/" ++ show' (M.map abs den)
-    where
-      show' units = unwords [showExp u | u <- M.toList units]
-
-      -- show a single unit with optional exponent
-      showExp (u, 1) = show u
-      showExp (u, n) =
-        if denominator n == 1
-          then show u ++ "^" ++ show (numerator n)
-          else show u ++ "^" ++ show (fromRational n :: Double)
+  show (Units m) = showDimsMap m
 
 instance Disjoin Units where
-  (</>) a (Units m) = a <> Units (M.map negate m)
+  (</>) a b = a <> recipUnits b
 
 -- returns the fundamental dimensions of the units
 dims :: Units -> Dims
@@ -125,3 +110,6 @@ mergeUnits from@(Units a) to@(Units b) =
   where
     dToU :: [Unit] -> Dim -> Unit
     dToU units dim = fromJust $ find ((== dim) . _dim) units
+
+recipUnits :: Units -> Units
+recipUnits (Units m) = Units $ M.map negate m

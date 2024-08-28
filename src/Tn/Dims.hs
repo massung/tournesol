@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedLists #-}
 
 module Tn.Dims where
@@ -40,7 +41,10 @@ instance Ord Dim where
 type DimMap = M.Map Dim Rational
 
 newtype Dims = Dims DimMap
-  deriving (Eq, Show)
+  deriving (Eq)
+
+instance Show Dims where
+  show (Dims d) = showDimsMap d
 
 instance Semigroup Dims where
   (<>) (Dims a) (Dims b) = Dims $ M.filter (/= 0) $ M.unionWith (+) a b
@@ -60,3 +64,20 @@ fundamentalDims (Derived _ (Dims m)) = M.foldlWithKey' reduceDims mempty m
   where
     reduceDims dims d n =
       let (Dims m') = fundamentalDims d in dims <> Dims (M.map (* n) m')
+
+showDimsMap :: (Show a) => Map a Rational -> String
+showDimsMap m =
+  let (num, den) = M.partition (> 0) m
+   in if
+        | null num -> show' den
+        | null den -> show' num
+        | otherwise -> show' num ++ "/" ++ show' (M.map abs den)
+  where
+    show' units = unwords [showExp u | u <- M.toList units]
+
+    -- show a single unit with optional exponent
+    showExp (u, 1) = show u
+    showExp (u, n) =
+      if denominator n == 1
+        then show u ++ "^" ++ show (numerator n)
+        else show u ++ "^" ++ show (fromRational n :: Double)

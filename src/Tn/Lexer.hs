@@ -21,10 +21,10 @@ lexer = makeTokenParser lang
           nestedComments = False,
           identStart = letter <|> char '_',
           identLetter = letter,
-          opStart = oneOf ":$%?+-*/^<>=!@|&",
-          opLetter = oneOf "+-*/<>=!@|&",
-          reservedNames = ["_", "ans", "base", "const", "dim", "function", "inf", "si", "storage", "unit"],
-          reservedOpNames = [":", "+", "-", "*", "/", "^", "=", "<", ">", "<=", ">=", "<>"],
+          opStart = oneOf "^+-*/<>=",
+          opLetter = oneOf "^+-*/<>=",
+          reservedNames = ["_", "alias", "ans", "base", "const", "dim", "function", "inf", "si", "storage", "unit"],
+          reservedOpNames = ["+", "-", "*", "/", "^", "=", "<", ">", "<=", ">=", "<>"],
           caseSensitive = True
         }
 

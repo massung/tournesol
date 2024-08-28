@@ -1,4 +1,4 @@
-module Tn.Eval where
+module Tn.Eval (evalExpr) where
 
 import Tn.Error
 import Tn.Expr
@@ -8,32 +8,32 @@ import Tn.Units
 
 type EvalResultT = ExceptT EvalError (State Scalar)
 
-eval :: Scalar -> Expr -> Either EvalError Scalar
-eval ans expr = evalState (runExceptT $ evalExpr expr) ans
+evalExpr :: Scalar -> Expr -> Either EvalError Scalar
+evalExpr ans expr = evalState (runExceptT $ evalExprTerm expr) ans
 
-evalExpr :: Expr -> EvalResultT Scalar
-evalExpr Ans = get
-evalExpr (Term x) = return x
-evalExpr (Convert to x) = evalConvert x to
-evalExpr (Unary f x) = evalUnary f x
-evalExpr (Binary f x y) = evalBinary f x y
-evalExpr (Apply f xs) = evalApply f xs
+evalExprTerm :: Expr -> EvalResultT Scalar
+evalExprTerm Ans = get
+evalExprTerm (Term x) = return x
+evalExprTerm (Convert to x) = evalConvert x to
+evalExprTerm (Unary f x) = evalUnary f x
+evalExprTerm (Binary f x y) = evalBinary f x y
+evalExprTerm (Apply f xs) = evalApply f xs
 
 evalConvert :: Expr -> Units -> EvalResultT Scalar
-evalConvert x to = evalExpr x <&> convertTo to
+evalConvert x to = evalExprTerm x <&> convertTo to
 
 evalUnary :: (Scalar -> Either EvalError Scalar) -> Expr -> EvalResultT Scalar
 evalUnary f x = do
-  x' <- evalExpr x
+  x' <- evalExprTerm x
   either throwError return $ f x'
 
 evalBinary :: (Scalar -> Scalar -> Either EvalError Scalar) -> Expr -> Expr -> EvalResultT Scalar
 evalBinary f x y = do
-  x' <- evalExpr x
-  y' <- evalExpr y
+  x' <- evalExprTerm x
+  y' <- evalExprTerm y
   either throwError return $ f x' y'
 
 evalApply :: Function -> [Expr] -> EvalResultT Scalar
 evalApply f xs = do
-  xs' <- sequence [evalExpr x | x <- xs]
+  xs' <- sequence [evalExprTerm x | x <- xs]
   either throwError return $ f xs'

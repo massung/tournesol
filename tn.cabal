@@ -27,7 +27,6 @@ library
   exposed-modules:
       Tn.Builtins
       Tn.Conv
-      Tn.Default
       Tn.Dims
       Tn.Error
       Tn.Eval

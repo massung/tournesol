@@ -2,7 +2,12 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Tn.Script (scriptParser) where
+module Tn.Script
+  ( loadScript,
+    loadScriptFile,
+    scriptParser,
+  )
+where
 
 import qualified Data.Map.Strict as M
 import Data.Symbol
@@ -10,6 +15,7 @@ import Text.Parsec hiding ((<|>))
 import Text.Parsec.Token
 import Tn.Conv
 import Tn.Dims
+import Tn.Eval
 import Tn.Expr
 import Tn.Function
 import Tn.Parser
@@ -17,25 +23,35 @@ import Tn.Scalar
 import Tn.Scope
 import Tn.Units
 
-scriptParser :: Parsec String Scope ()
-scriptParser = void $ scriptDecl `sepBy` lexeme lexer newline
+loadScript :: String -> String -> Scope -> Either ParseError Scope
+loadScript filename source scope = runParser scriptParser scope filename source
+
+loadScriptFile :: String -> Scope -> IO (Either ParseError Scope)
+loadScriptFile filename scope = do
+  source <- readFile filename
+  return $ loadScript filename source scope
+
+scriptParser :: Parsec String Scope Scope
+scriptParser = do
+  whiteSpace lexer
+  void $ scriptDecl `sepEndBy` lexeme lexer (lexeme lexer $ char ';')
+  eof
+  getState
 
 scriptDecl :: Parsec String Scope ()
 scriptDecl = dimDecl <|> unitDecl
 
+-- dim [base] <name>
 dimDecl :: Parsec String Scope ()
-dimDecl = dimBase <|> dimDerived
+dimDecl = reserved lexer "dim" >> dimBase <|> dimDerived
 
 dimBase :: Parsec String Scope ()
 dimBase = do
-  scope <- getState
-  pos <- getPosition
-
-  -- dim base <name>
-  reserved lexer "dim"
   reserved lexer "base"
 
   -- dimension name
+  scope <- getState
+  pos <- getPosition
   name <- identifier lexer <&> intern
 
   -- add to the scope or fail
@@ -43,12 +59,9 @@ dimBase = do
 
 dimDerived :: Parsec String Scope ()
 dimDerived = do
+  name <- identifier lexer <&> intern
   scope <- getState
   pos <- getPosition
-
-  -- dim <name> = <dims>
-  reserved lexer "dim"
-  name <- identifier lexer <&> intern
 
   -- fundamental dimensions
   reservedOp lexer "="
@@ -67,16 +80,15 @@ dimParser = do
     Just (dim, _) -> return dim
 
 unitDecl :: Parsec String Scope ()
-unitDecl = unitBase
+unitDecl = reserved lexer "unit" >> unitBase <|> unitAlias <|> unitDerived
 
 unitBase :: Parsec String Scope ()
 unitBase = do
-  scope <- getState
-  pos <- getPosition
+  reserved lexer "base"
 
   -- unit base [si|storage] <symbol> ["name"] = <dim>
-  reserved lexer "unit"
-  reserved lexer "base"
+  scope <- getState
+  pos <- getPosition
   si <- optionMaybe $ reserved lexer "si"
   sym <- identifier lexer
   name <- option sym docString
@@ -85,7 +97,9 @@ unitBase = do
   reservedOp lexer "="
   dim <- dimParser
 
-  -- TODO: check to make sure that BASE units don't already exist
+  -- check to make sure that base units don't already exist
+  let org = elem dim [u._dim | (u, _) <- baseUnits scope]
+   in when org $ fail "base units already exist for dimension"
 
   -- create the new base units
   let u =
@@ -99,19 +113,54 @@ unitBase = do
         then either fail putState $ declUnits (siUnits u) (Just pos) scope
         else either fail putState $ declUnit u (Just pos) scope
 
-unitDerived :: Parsec String Scope ()
-unitDerived = do
+unitAlias :: Parsec String Scope ()
+unitAlias = do
+  reserved lexer "alias"
+
+  -- unit alias <symbol> ["name"] = <units>
   scope <- getState
   pos <- getPosition
-
-  -- unit <symbol> ["name"] = <scalar>
-  reserved lexer "unit"
   sym <- identifier lexer
   name <- option sym docString
 
   -- fundamental dimensions
   reservedOp lexer "="
-  (Scalar x (Just u')) <- scalarParser
+  alias <- unitsParser
+
+  -- is there a dimension for the resulting units?
+  case find ((== dims alias) . fundamentalDims) $ baseDims scope of
+    Nothing -> fail "unknown dimensions for unit"
+    Just dim ->
+      let u =
+            Unit
+              { _symbol = intern sym,
+                _name = name,
+                _dim = dim,
+                _conv = unitsConv alias
+              }
+       in either fail putState $ declUnit u (Just pos) scope
+
+unitDerived :: Parsec String Scope ()
+unitDerived = do
+  scope <- getState
+  pos <- getPosition
+  sym <- identifier lexer
+  name <- option sym docString
+
+  -- fundamental dimensions
+  reservedOp lexer "="
+
+  -- a derived unit is an expression
+  (Scalar x units) <-
+    exprParser >>= \case
+      e@(Term _) -> either (fail . show) return $ evalExpr 0 e
+      e@(Unary {}) -> either (fail . show) return $ evalExpr 0 e
+      e@(Binary {}) -> either (fail . show) return $ evalExpr 0 e
+      -- TODO: handle Apply f [exprs] -> create a Conv function pair?
+      _ -> fail "illegal derived units expression"
+
+  -- ensure the units exist, otherwise it's just a constant value
+  u' <- maybe (fail "illegal derived units expression") (return . recipUnits) units
 
   -- is there dimension for the resulting units?
   case find ((== dims u') . fundamentalDims) $ baseDims scope of

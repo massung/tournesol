@@ -287,10 +287,10 @@ _kph :: Unit
 _kph = Unit {_symbol = "kph", _name = "kilometers per hour", _dim = _speed, _conv = Linear (18 % 5)}
 
 _kn :: Unit
-_kn = Unit {_symbol = "kn", _name = "knots", _dim = _speed, _conv = Linear (3125 % 1397)}
+_kn = Unit {_symbol = "kn", _name = "knots", _dim = _speed, _conv = Linear (900 % 463)}
 
 _mph :: Unit
-_mph = Unit {_symbol = "mph", _name = "miles per hour", _dim = _speed, _conv = Linear (900 % 463)}
+_mph = Unit {_symbol = "mph", _name = "miles per hour", _dim = _speed, _conv = Linear (3125 % 1397)}
 
 --
 -- storage units

@@ -48,9 +48,7 @@ exprParens = do
     Just units -> Convert units expr
 
 exprConvert :: ParsecT String Scope Identity Units
-exprConvert = do
-  reservedOp lexer ":" <|> reserved lexer "to"
-  unitsParser
+exprConvert = lexeme lexer (char ':') >> unitsParser
 
 exprApply :: ParsecT String Scope Identity Expr
 exprApply = do

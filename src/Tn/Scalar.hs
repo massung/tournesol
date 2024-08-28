@@ -114,8 +114,6 @@ instance Fractional Scalar where
   -- scalar inverse
   recip (Scalar 0 _) = InvalidScalar DivByZero
   recip (Scalar x u) = Scalar (recip x) (fmap recipUnits u)
-    where
-      recipUnits (Units m) = Units $ M.map negate m
   recip x = x
 
 mapFloating :: (Double -> Double) -> (Scalar -> Scalar)

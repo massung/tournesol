@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
+import Data.FileEmbed
 import Test.Hspec
 import Text.Parsec
 import Tn.Builtins
@@ -8,6 +11,7 @@ import Tn.Conv
 import Tn.Dims
 import Tn.Expr
 import Tn.Scope
+import Tn.Script
 import Tn.Units
 
 main :: IO ()
@@ -17,6 +21,10 @@ main =
         testDims
         testConvs
         testUnits
+        testScripts
+
+testScript :: String
+testScript = $(embedStringFile "scripts/tests/test.tn")
 
 testDims :: SpecWith ()
 testDims = do
@@ -76,6 +84,21 @@ testUnits = do
   describe "mergeUnits" $ do
     it "mergeUnits [(_m, 1)] [(_ft, 1)] == [(_ft, 2)]" $ do
       mergeUnits (Units [(_m, 1)]) (Units [(_ft, 1)]) `shouldBe` Units [(_ft, 2)]
+
+testScripts :: SpecWith ()
+testScripts =
+  let scope = loadScript "test.tn" testScript mempty
+   in do
+        describe "load script" $ do
+          it "load test script" $ do
+            isRight scope `shouldBe` True
+
+          let Right s = scope
+           in do
+                it "check base dims" $ do
+                  print s._dims
+                  print s._units
+                  length (baseDims s) `shouldBe` 2
 
 {-
 testDims = do
