@@ -6,10 +6,10 @@ module Tn.Scope where
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as G
 import qualified Data.Map.Strict as M
-import Tn.Symbol
 import Tn.Builtins
 import Tn.Conv
 import Tn.Scalar
+import Tn.Symbol
 import Tn.Unit
 
 data Scope = Scope
@@ -36,13 +36,13 @@ instance Semigroup Scope where
 instance Monoid Scope where
   mempty =
     Scope
-    { _convs = G.empty,
-      _dims = mempty,
-      _units = mempty,
-      _locals = mempty,
-      _ans = 0,
-      _epsilon = 0.0
-    }
+      { _convs = G.empty,
+        _dims = mempty,
+        _units = mempty,
+        _locals = mempty,
+        _ans = 0,
+        _epsilon = 0.0
+      }
 
 defaultDims :: [Base]
 defaultDims =
@@ -108,24 +108,23 @@ imperialConvs =
       linearConvs _ft _mi $ 5280 % 1
     ]
 
-
-  -- [ -- area units (imperial)
-  --   [_ha, _acre],
-  --   -- energy units (imperial)
-  --   [_BTU, _thm],
-  --   -- force units (imperial)
-  --   [_lbf, _pond],
-  --   -- length units (imperial)
-  --   [_mil, _in, _h, _ft, _yd, _ftm, _ch, _fur, _mi, _lea, _cable, _nmi, _link, _rod],
-  --   -- mass units (imperial)
-  --   [_oz, _lb, _st, _cwt, _t],
-  --   -- power units (imperial)
-  --   [_hp],
-  --   -- pressure units (imperial)
-  --   [_psi, _bar],
-  --   -- volume units (imperial)
-  --   [_tsp, _tbsp, _floz, _c, _pt, _qt, _gal]
-  -- ]
+-- [ -- area units (imperial)
+--   [_ha, _acre],
+--   -- energy units (imperial)
+--   [_BTU, _thm],
+--   -- force units (imperial)
+--   [_lbf, _pond],
+--   -- length units (imperial)
+--   [_mil, _in, _h, _ft, _yd, _ftm, _ch, _fur, _mi, _lea, _cable, _nmi, _link, _rod],
+--   -- mass units (imperial)
+--   [_oz, _lb, _st, _cwt, _t],
+--   -- power units (imperial)
+--   [_hp],
+--   -- pressure units (imperial)
+--   [_psi, _bar],
+--   -- volume units (imperial)
+--   [_tsp, _tbsp, _floz, _c, _pt, _qt, _gal]
+-- ]
 
 angleConvs :: ConvGraph
 angleConvs =
@@ -148,7 +147,7 @@ durationConvs :: ConvGraph
 durationConvs =
   G.overlays
     [ linearConvs _s _min $ 60 % 1,
-      linearConvs _min _hr $ 60  % 1,
+      linearConvs _min _hr $ 60 % 1,
       linearConvs _hr _day $ 24 % 1
     ]
 
@@ -158,8 +157,10 @@ durationConvs =
 diskConvs :: ConvGraph
 diskConvs =
   G.overlays
-    [ storageConvs _B,
-      storageConvs _b
+    [ binaryConvs _B,
+      binaryConvs _b,
+      -- conversion from bit -> byte
+      linearConvs _b _B $ 8 % 1
     ]
 
 -- temperatureUnits :: [[Unit]]
@@ -174,16 +175,16 @@ defaultConvs =
       durationConvs,
       imperialConvs,
       metricConvs
-      --speedConvs,
-      --temperatureConvs
+      -- speedConvs,
+      -- temperatureConvs
     ]
 
 defaultScope :: Scope
 defaultScope =
   mempty
-    { _convs=defaultConvs,
-      _dims=M.fromList dims,
-      _units=M.fromList units
+    { _convs = defaultConvs,
+      _dims = M.fromList dims,
+      _units = M.fromList units
     }
   where
     units = [(s, u) | u@(Unit s _) <- G.vertexList defaultConvs]
@@ -200,3 +201,6 @@ declUnit u@(Unit s _) scope =
   if M.member s scope._units
     then Left "unit already defined"
     else Right scope {_units = M.insert s u scope._units}
+
+declConvs :: ConvGraph -> Scope -> Scope
+declConvs g scope = scope {_convs = G.overlay scope._convs g}

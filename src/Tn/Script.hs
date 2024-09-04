@@ -1,20 +1,18 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLists #-}
 
 module Tn.Script
   ( loadScript,
     loadScriptFile,
-    scriptParser,
   )
 where
 
+import qualified Algebra.Graph.Labelled.AdjacencyMap as G
 import qualified Data.Map.Strict as M
 import Text.Parsec
 import Text.Parsec.Token
 import Tn.Conv
-import Tn.Dims
 import Tn.Eval
-import Tn.Expr
-import Tn.Function
 import Tn.Parser
 import Tn.Scalar
 import Tn.Scope
@@ -39,11 +37,14 @@ scriptParser = do
   getState
 
 scriptDecl :: Parsec String Scope ()
-scriptDecl = do reserved lexer "dim"; dimDecl <|> unitDecl
+scriptDecl = dimDecl <|> unitDecl
 
 -- dim [base] <name>
 dimDecl :: Parsec String Scope ()
 dimDecl = do
+  reserved lexer "dim"
+
+  -- fundamental dimension name
   name <- identifier lexer <&> intern
 
   -- register the base dimension in the scope
@@ -59,8 +60,8 @@ unitDecl = do
   name <- identifier lexer <&> intern
   reservedOp lexer "="
 
-  -- base, derived, or conversion
-  unitBase name <|> unitDerived name <|> unitConv name
+  -- base, alias (derived), or conversion
+  unitBase name <|> unitAlias name <|> unitConv name
 
 unitBase :: Symbol -> Parsec String Scope ()
 unitBase name = do
@@ -69,33 +70,56 @@ unitBase name = do
   -- optional system and registered dimension
   system <- optionMaybe systemName
   base <- baseDim
-  return ()
+  scope <- getState
 
--- TODO: register the unit
+  -- build the graph for the unit
+  let u = Unit name base
+      g = case system of
+        Just Metric -> siConvs u
+        Just Binary -> binaryConvs u
+        _ -> G.vertex u
 
-unitDerived :: Symbol -> Parsec String Scope ()
-unitDerived name = do
-  units <- unitsParser
-  return ()
+  -- add the unit and conversions to the scope
+  either fail (putState . declConvs g) $ declUnit u scope
 
--- TODO: register the unit
+unitAlias :: Symbol -> Parsec String Scope ()
+unitAlias name = do
+  u <- unitsParser <&> Unit name . Derived
+  scope <- getState
+
+  -- register the unit in the scope
+  either fail putState $ declUnit u scope
 
 unitConv :: Symbol -> Parsec String Scope ()
 unitConv name = do
-  r <- scalarParser
-  return ()
+  expr <- exprParser
+  scope <- getState
 
--- TODO: verify no compound units!
+  -- evaluate the expression
+  r <- either fail return $ evalExpr (0, scope) expr
 
--- TODO: create the linear conversion (r units positive or negative?)
+  -- the conversion should not consist of compound units
+  (cu, e) <- case toList <$> scalarUnits r of
+    Just [dim] -> return dim
+    Nothing -> fail "unit cannot be derived from constant"
+    _ -> fail "unit cannot be dervived from compound units"
 
--- TODO: register the unit
+  -- define the unit and conversion
+  let u = Unit name $ Derived [(cu, e)]
+      g =
+        if e > 0
+          then linearConvs u cu $ toRational r
+          else linearConvs cu u $ toRational r
+
+  -- add the unit and conversions to the scope
+  either fail (putState . declConvs g) $ declUnit u scope
 
 systemName :: Parsec String Scope System
 systemName = do
   (reserved lexer "imperial" >> return Imperial)
-    <|> (reserved lexer "metric" >> return Metric)
-    <|> (reserved lexer "storage" >> return Storage)
+    <|> (reserved lexer "english" >> return Imperial)
+    <|> (reserved lexer "si" >> return Metric)
+    <|> (reserved lexer "binary" >> return Binary)
 
 baseDim :: Parsec String Scope Base
 baseDim = do

@@ -13,7 +13,7 @@ instance Eq Scalar where
   (==) (Scalar x ux) (Scalar y uy) = x == y && ux == uy
 
 instance Ord Scalar where
-  compare (Scalar a ux) (Scalar b uy) =  assert (ux == uy) $ compare a b
+  compare (Scalar a ux) (Scalar b uy) = assert (ux == uy) $ compare a b
 
 instance Show Scalar where
   show x@(Scalar _ Nothing) = printf "%g" x

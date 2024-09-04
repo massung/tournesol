@@ -5,8 +5,7 @@ module Tn.System where
 data System
   = Imperial
   | Metric
-  | Storage
-  | Currency
+  | Binary
   deriving (Eq, Show)
 
 siPrefixes :: [(String, String, Rational)]
@@ -29,8 +28,8 @@ siPrefixes =
     ("exa", "E", 1e18)
   ]
 
-storagePrefixes :: [(String,  String, Rational)]
-storagePrefixes =
+binaryPrefixes :: [(String, String, Rational)]
+binaryPrefixes =
   [ ("kilo", "k", 1024),
     ("mega", "M", 1048576),
     ("giga", "G", 1073741824),

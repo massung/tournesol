@@ -1,11 +1,14 @@
-module Tn.Eval (evalExpr) where
+module Tn.Eval
+  ( module Tn.Expr,
+    evalExpr,
+  )
+where
 
-import Tn.Error
 import Tn.Expr
 import Tn.Function
 import Tn.Ops
-import Tn.Scope
 import Tn.Scalar
+import Tn.Scope
 import Tn.Unit
 
 type EvalResultT = ExceptT String (State (Scalar, Scope))
@@ -17,8 +20,9 @@ evalExprTerm :: Expr -> EvalResultT Scalar
 evalExprTerm Ans = get <&> fst
 evalExprTerm (Term x) = return x
 evalExprTerm (Convert to x) = evalConvert x to
-evalExprTerm (Unary f x) = evalUnary f x
-evalExprTerm (Binary f x y) = evalBinary f x y
+evalExprTerm (UnaryOp f x) = evalUnaryOp f x
+evalExprTerm (BinaryOp f x y) = evalBinaryOp f x y
+
 -- evalExprTerm (Apply f xs) = evalApply f xs
 
 evalConvert :: Expr -> Units -> EvalResultT Scalar
@@ -30,8 +34,8 @@ evalConvert term units = do
   let ans = runWithScope scope $ convertUnits x units
    in either throwError return ans
 
-evalUnary :: (Scalar -> OpResultT Scalar) -> Expr -> EvalResultT Scalar
-evalUnary f term = do
+evalUnaryOp :: (Scalar -> OpResultT Scalar) -> Expr -> EvalResultT Scalar
+evalUnaryOp f term = do
   x <- evalExprTerm term
   scope <- get <&> snd
 
@@ -39,8 +43,8 @@ evalUnary f term = do
   let ans = runWithScope scope $ f x
    in either throwError return ans
 
-evalBinary :: (Scalar -> Scalar -> OpResultT Scalar) -> Expr -> Expr -> EvalResultT Scalar
-evalBinary f x y = do
+evalBinaryOp :: (Scalar -> Scalar -> OpResultT Scalar) -> Expr -> Expr -> EvalResultT Scalar
+evalBinaryOp f x y = do
   x' <- evalExprTerm x
   y' <- evalExprTerm y
 

@@ -2,9 +2,9 @@ module Tn.Conv where
 
 import Algebra.Graph.Labelled.AdjacencyMap
 import qualified Data.Set as S
-import Prelude hiding ((\\))
 import Tn.System
 import Tn.Unit
+import Prelude hiding ((\\))
 
 -- labeled graph, units are vertices and conversion functions are edges
 type ConvGraph = AdjacencyMap (Maybe Conv) Unit
@@ -44,9 +44,9 @@ derivedConvs prefixes u = overlays $ fmap convs prefixes
 siConvs :: Unit -> ConvGraph
 siConvs = derivedConvs siPrefixes
 
--- return a storage conversion graph given the fundamental unit
-storageConvs :: Unit -> ConvGraph
-storageConvs = derivedConvs storagePrefixes
+-- return a binary conversion graph given the fundamental unit
+binaryConvs :: Unit -> ConvGraph
+binaryConvs = derivedConvs binaryPrefixes
 
 -- returns an empty conversion graph
 mkConvGraph :: [ConvGraph] -> ConvGraph

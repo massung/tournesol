@@ -64,6 +64,10 @@ dimExponent a (Dims m) = M.lookup a m
 nullDims :: Dims a -> Bool
 nullDims (Dims m) = M.null m
 
+-- true if there is only a single dimension
+isSingleton :: Dims a -> Bool
+isSingleton (Dims m) = M.size m == 1
+
 -- return the reciprocal dimensions
 recipDims :: Dims a -> Dims a
 recipDims = mapDims negate

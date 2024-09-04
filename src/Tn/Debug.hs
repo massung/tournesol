@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -10,6 +11,7 @@ module Tn.Debug
     module Tn.Ops,
     module Tn.Scalar,
     module Tn.Scope,
+    module Tn.Script,
     module Tn.Unit,
   )
 where
@@ -24,9 +26,15 @@ import Tn.Ops
 import Tn.Parser
 import Tn.Scalar
 import Tn.Scope
+import Tn.Script
 import Tn.Unit
 
 instance IsString Scalar where
   fromString s = case runParser scalarParser defaultScope "" s of
-    Left _ -> invalidScalar
+    Left _ -> error "Invalid scalar"
     Right x -> x
+
+instance IsString (Dims Unit) where
+  fromString s = case runParser unitsParser defaultScope "" s of
+    Left _ -> error "Invalid units"
+    Right u -> u

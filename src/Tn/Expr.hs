@@ -7,7 +7,6 @@ module Tn.Expr
 where
 
 import qualified Data.Map.Strict as M
-import Tn.Symbol
 import Text.Parsec
 import Text.Parsec.Expr
 import Text.Parsec.Token
@@ -17,6 +16,7 @@ import Tn.Ops
 import Tn.Parser
 import Tn.Scalar
 import Tn.Scope
+import Tn.Symbol
 import Tn.Unit
 import Prelude hiding (Infix, Prefix, (<|>))
 
@@ -24,10 +24,10 @@ data Expr
   = Ans
   | Term Scalar
   | Convert Units Expr
-  | Unary (Scalar -> OpResultT Scalar) Expr
-  | Binary (Scalar -> Scalar -> OpResultT Scalar) Expr Expr
--- | Apply Function [Expr]
+  | UnaryOp (Scalar -> OpResultT Scalar) Expr
+  | BinaryOp (Scalar -> Scalar -> OpResultT Scalar) Expr Expr
 
+-- | Apply Function [Expr]
 exprParser :: Parsec String Scope Expr
 exprParser = buildExpressionParser exprTable exprTerm <|> (do eof; return Ans)
 
@@ -62,10 +62,10 @@ exprTable =
   ]
 
 prefix :: String -> (Scalar -> OpResultT Scalar) -> Operator String Scope Identity Expr
-prefix op f = Prefix (do reservedOp lexer op; return $ Unary f)
+prefix op f = Prefix (do reservedOp lexer op; return $ UnaryOp f)
 
 binary :: String -> (Scalar -> Scalar -> OpResultT Scalar) -> Assoc -> Operator String Scope Identity Expr
-binary op f = Infix (do reservedOp lexer op; return $ Binary f)
+binary op f = Infix (do reservedOp lexer op; return $ BinaryOp f)
 
 -- exprApply :: ParsecT String Scope Identity Expr
 -- exprApply = do

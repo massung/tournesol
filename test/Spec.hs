@@ -18,8 +18,13 @@ main =
     testOps
     testExprs
 
-testScript :: String
-testScript = $(embedStringFile "scripts/tests/test.tn")
+    -- load the test script before this spec action
+    case loadScript "test.tn" embeddedScript mempty of
+      Left err -> error $ show err
+      Right scope -> testScript scope
+
+embeddedScript :: String
+embeddedScript = $(embedStringFile "scripts/test.tn")
 
 testScope :: Scope
 testScope =
@@ -30,11 +35,14 @@ testScope =
 runWithTestScope :: OpResultT Scalar -> Either String Scalar
 runWithTestScope = runWithScope testScope
 
-runTestExpr :: String -> Either String Scalar
-runTestExpr s =
-  case runParser exprParser testScope "" s of
+evalWithScope :: Scope -> String -> Either String Scalar
+evalWithScope scope s =
+  case runParser exprParser scope "" s of
     Left err -> Left $ show err
-    Right expr -> evalExpr (0, testScope) expr
+    Right expr -> evalExpr (0, scope) expr
+
+evalWithTestScope :: String -> Either String Scalar
+evalWithTestScope = evalWithScope testScope
 
 testUnits :: SpecWith ()
 testUnits = do
@@ -98,30 +106,38 @@ testParsing = do
       _hr = Unit "hr" _time
       _kg = Unit "kg" _mass
 
+  describe "Parse units" $ do
+    it "kg" $ do
+      ("kg" :: Units) `shouldBe` [(_kg, 1)]
+    it "kg km^2" $ do
+      ("kg km^2" :: Units) `shouldBe` [(_kg, 1), (_km, 2)]
+    it "kg km^2 / hr^2" $ do
+      ("kg km^2 / hr^2" :: Units) `shouldBe` [(_kg, 1), (_km, 2), (_hr, -2)]
+
   describe "Parse simple scalars" $ do
-    it "parse 5" $ do
+    it "5" $ do
       ("5" :: Scalar) `shouldBe` Scalar 5 Nothing
-    it "parse 3.5" $ do
+    it "3.5" $ do
       ("3.5" :: Scalar) `shouldBe` Scalar 3.5 Nothing
 
   describe "Parse scientific notation" $ do
-    it "parse 4e3" $ do
+    it "4e3" $ do
       ("4e3" :: Scalar) `shouldBe` Scalar 4e3 Nothing
-    it "parse 50e-2" $ do
+    it "50e-2" $ do
       ("50e-2" :: Scalar) `shouldBe` Scalar 0.5 Nothing
 
   describe "Parse scalars with units" $ do
-    it "parse 30 ft" $ do
+    it "30 ft" $ do
       ("30 ft" :: Scalar) `shouldBe` Scalar 30 (Just $ Dims [(_ft, 1)])
-    it "parse 12in^2" $ do
+    it "12in^2" $ do
       ("12in^2" :: Scalar) `shouldBe` Scalar 12 (Just $ Dims [(_in, 2)])
-    it "parse 45 km/hr" $ do
+    it "45 km/hr" $ do
       ("45 km/hr" :: Scalar) `shouldBe` Scalar 45 (Just $ Dims [(_km, 1), (_hr, -1)])
-    it "parse 12 in^3 hr" $ do
+    it "12 in^3 hr" $ do
       ("12 in^3 hr" :: Scalar) `shouldBe` Scalar 12 (Just $ Dims [(_in, 3), (_hr, 1)])
-    it "parse 2 ft kg^2 / hr^4" $ do
+    it "2 ft kg^2 / hr^4" $ do
       ("2 ft kg^2 / hr^4" :: Scalar) `shouldBe` Scalar 2 (Just $ Dims [(_ft, 1), (_kg, 2), (_hr, -4)])
-    it "parse 2 s^-2" $ do
+    it "2 s^-2" $ do
       ("2 s^-2" :: Scalar) `shouldBe` Scalar 2 (Just $ Dims [(_s, -2)])
 
 testOps :: SpecWith ()
@@ -178,24 +194,35 @@ testExprs :: SpecWith ()
 testExprs = do
   describe "Simple expressions" $ do
     it "2 + 3 - 1" $ do
-      runTestExpr "2 + 3 - 1" `shouldBe` Right 4
+      evalWithTestScope "2 + 3 - 1" `shouldBe` Right 4
     it "1 * 3 + 2" $ do
-      runTestExpr "1 * 3 + 2" `shouldBe` Right 5
+      evalWithTestScope "1 * 3 + 2" `shouldBe` Right 5
     it "1 + 2 * 3" $ do
-      runTestExpr "1 + 2 * 3" `shouldBe` Right 7
+      evalWithTestScope "1 + 2 * 3" `shouldBe` Right 7
     it "(1 + 2) * 3" $ do
-      runTestExpr "(1 + 2) * 3" `shouldBe` Right 9
+      evalWithTestScope "(1 + 2) * 3" `shouldBe` Right 9
 
   describe "Simple expressions with units" $ do
     it "1 ft + 2" $ do
-      runTestExpr "1 ft + 2" `shouldBe` Right "3 ft"
+      evalWithTestScope "1 ft + 2" `shouldBe` Right "3 ft"
     it "1 + 2 ft" $ do
-      runTestExpr "1 + 2 ft" `shouldBe` Right "3 ft"
+      evalWithTestScope "1 + 2 ft" `shouldBe` Right "3 ft"
     it "3m * 2m" $ do
-      runTestExpr "3m * 2m" `shouldBe` Right "6m^2"
+      evalWithTestScope "3m * 2m" `shouldBe` Right "6m^2"
 
   describe "Expressions with unit conversions" $ do
     it "1 ft + 1 yd" $ do
-      runTestExpr "1 ft + 1 yd" `shouldBe` Right "4 ft"
+      evalWithTestScope "1 ft + 1 yd" `shouldBe` Right "4 ft"
     it "1 yd + 3 ft" $ do
-      runTestExpr "1 yd + 3 ft" `shouldBe` Right "2 yd"
+      evalWithTestScope "1 yd + 3 ft" `shouldBe` Right "2 yd"
+
+testScript :: Scope -> SpecWith ()
+testScript scope = do
+  describe "Scripts" $ do
+    context "Test unit conversions" $ do
+      it "1 yd == 3 ft" $ do
+        evalWithScope scope "1 yd == 3 ft" `shouldBe` Right 1
+      it "1 mi == 1760 yd" $ do
+        evalWithScope scope "1 mi == 1760 yd" `shouldBe` Right 1
+      it "1 ft == 12 in" $ do
+        evalWithScope scope "1 ft == 12 in" `shouldBe` Right 1
