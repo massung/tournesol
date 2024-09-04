@@ -64,4 +64,5 @@ tests:
       - -with-rtsopts=-N
     dependencies:
       - hspec
+      - QuickCheck
       - tn

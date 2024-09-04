@@ -16,10 +16,25 @@ main =
     testConvs
     testParsing
     testOps
-    testExpr
+    testExprs
 
--- testScript :: String
--- testScript = $(embedStringFile "scripts/tests/test.tn")
+testScript :: String
+testScript = $(embedStringFile "scripts/tests/test.tn")
+
+testScope :: Scope
+testScope =
+  defaultScope
+    { _epsilon = 5e-3
+    }
+
+runWithTestScope :: OpResultT Scalar -> Either String Scalar
+runWithTestScope = runWithScope testScope
+
+runTestExpr :: String -> Either String Scalar
+runTestExpr s =
+  case runParser exprParser testScope "" s of
+    Left err -> Left $ show err
+    Right expr -> evalExpr (0, testScope) expr
 
 testUnits :: SpecWith ()
 testUnits = do
@@ -44,6 +59,16 @@ testUnits = do
   describe "Base conversions" $ do
     it "_ft -> _m" $ do
       unitsToConv [(_ft, 1)] [(_m, 2)] `shouldBe` [(_ft, _m, 1)]
+
+  describe "Validating units" $ do
+    it "_ft _g" $ do
+      verifyUnits [(_ft, 1), (_g, 1)] `shouldBe` True
+    it "_ft _m" $ do
+      verifyUnits [(_ft, 1), (_m, 1)] `shouldBe` False
+    it "_ft^2" $ do
+      verifyUnits [(_ft, 2)] `shouldBe` True
+    it "_ft^2 _ft" $ do
+      verifyUnits [(_ft, 2), (_ft, 1)] `shouldBe` True
 
 testConvs :: SpecWith ()
 testConvs = do
@@ -97,60 +122,80 @@ testParsing = do
     it "parse 2 ft kg^2 / hr^4" $ do
       ("2 ft kg^2 / hr^4" :: Scalar) `shouldBe` Scalar 2 (Just $ Dims [(_ft, 1), (_kg, 2), (_hr, -4)])
     it "parse 2 s^-2" $ do
-      ("2 s^-2" :: Scalar)  `shouldBe` Scalar 2 (Just $ Dims [(_s, -2)])
+      ("2 s^-2" :: Scalar) `shouldBe` Scalar 2 (Just $ Dims [(_s, -2)])
 
 testOps :: SpecWith ()
 testOps = do
   describe "Simple add/subtract" $ do
     it "2 + 4" $ do
-      runWithDefaultScope ("2" +% "4") `shouldBe` Right (Scalar 6 Nothing)
+      runWithTestScope ("2" +% "4") `shouldBe` Right 6
     it "10 - 4" $ do
-      runWithDefaultScope ("10" -% "4") `shouldBe` Right (Scalar 6 Nothing)
+      runWithTestScope ("10" -% "4") `shouldBe` Right 6
 
   describe "Add/subtract with units" $ do
     it "2 ft + 4 ft" $ do
-      runWithDefaultScope ("2 ft" +% "4 ft") `shouldBe` Right (Scalar 6 (Just $ Dims [(_ft, 1)]))
+      runWithTestScope ("2 ft" +% "4 ft") `shouldBe` Right "6 ft"
     it "10 in - 4 in" $ do
-      runWithDefaultScope ("10 in" -% "4 in") `shouldBe` Right (Scalar 6 (Just $ Dims [(_in, 1)]))
+      runWithTestScope ("10 in" -% "4 in") `shouldBe` Right "6 in"
 
   describe "Add/subtract with units conversion" $ do
     it "6 in + 2 ft" $ do
-      runWithDefaultScope ("6 in" +% "2 ft") `shouldBe` Right (Scalar 30 (Just $ Dims [(_in, 1)]))
+      runWithTestScope ("6 in" +% "2 ft") `shouldBe` Right "30 in"
     it "3 ft^2 + 1 yd^2" $ do
-      runWithDefaultScope ("3 ft^2" +% "1 yd^2") `shouldBe` Right (Scalar 12 (Just $ Dims [(_ft, 2)]))
+      runWithTestScope ("3 ft^2" +% "1 yd^2") `shouldBe` Right "12 ft^2"
 
   describe "Add/subtract negative unit conversion" $ do
     it "6 ft + 2 g" $ do
       runWithDefaultScope ("6 ft" +% "2 g") `shouldSatisfy` isLeft
     it "6 ft - 2 g" $ do
-      runWithDefaultScope ("6 ft" -% "2 g") `shouldSatisfy` isLeft
+      runWithTestScope ("6 ft" -% "2 g") `shouldSatisfy` isLeft
     it "6 ft^2 - 1 ft" $ do
-      runWithDefaultScope ("6 ft^2" -% "1 ft") `shouldSatisfy` isLeft
+      runWithTestScope ("6 ft^2" -% "1 ft") `shouldSatisfy` isLeft
 
   describe "Simple multiply/divide" $ do
     it "2 * 4" $ do
-      runWithDefaultScope ("2" *% "4") `shouldBe` Right (Scalar 8 Nothing)
+      runWithTestScope ("2" *% "4") `shouldBe` Right 8
     it "8 / 2" $ do
-      runWithDefaultScope ("8" /% "2") `shouldBe` Right (Scalar 4 Nothing)
+      runWithTestScope ("8" /% "2") `shouldBe` Right 4
 
   describe "Multiply/divide with units" $ do
     it "2 ft * 3 ft" $ do
-      runWithDefaultScope ("2 ft" *% "3 ft") `shouldBe` Right (Scalar 6 (Just $ Dims [(_ft, 2)]))
+      runWithTestScope ("2 ft" *% "3 ft") `shouldBe` Right "6 ft^2"
     it "8 ft / 4 ft" $ do
-      runWithDefaultScope ("8 ft" /% "4 ft") `shouldBe` Right (Scalar 2 Nothing)
+      runWithTestScope ("8 ft" /% "4 ft") `shouldBe` Right 2
 
   describe "Multiply/divide with unit conversion" $ do
     it "4 ft^2 * 1 yd" $ do
-      runWithDefaultScope ("4 ft^2" *% "1 yd") `shouldBe` Right (Scalar 12 (Just $ Dims [(_ft, 3)]))
+      runWithTestScope ("4 ft^2" *% "1 yd") `shouldBe` Right "12 ft^3"
     it "24 in^3 / 2 ft" $ do
-      runWithDefaultScope ("24 in^3" /% "2 ft") `shouldBe` Right (Scalar 1 (Just $ Dims [(_in, 2)]))
+      runWithTestScope ("24 in^3" /% "2 ft") `shouldBe` Right "1 in^2"
 
-  -- describe "Multipy/divide with base units" $ do
-  --   it "10 J / 2 ft" $ do
-  --     runWithDefaultScope ("10 J" /% "2 ft") `shouldBe` Right (Scalar 5 (Just $ Dims [(_J, 1), (_m, -1)]))
+  describe "Multipy/divide with base units" $ do
+    it "10 J / 2 ft" $ do
+      runWithTestScope ("10 J" /% "2 ft") `shouldBe` Right "16.4042 J/m"
 
-testExpr :: SpecWith ()
-testExpr = do
-  describe "Expressions" $ do
+testExprs :: SpecWith ()
+testExprs = do
+  describe "Simple expressions" $ do
+    it "2 + 3 - 1" $ do
+      runTestExpr "2 + 3 - 1" `shouldBe` Right 4
+    it "1 * 3 + 2" $ do
+      runTestExpr "1 * 3 + 2" `shouldBe` Right 5
     it "1 + 2 * 3" $ do
-      "a" `shouldBe` "a"
+      runTestExpr "1 + 2 * 3" `shouldBe` Right 7
+    it "(1 + 2) * 3" $ do
+      runTestExpr "(1 + 2) * 3" `shouldBe` Right 9
+
+  describe "Simple expressions with units" $ do
+    it "1 ft + 2" $ do
+      runTestExpr "1 ft + 2" `shouldBe` Right "3 ft"
+    it "1 + 2 ft" $ do
+      runTestExpr "1 + 2 ft" `shouldBe` Right "3 ft"
+    it "3m * 2m" $ do
+      runTestExpr "3m * 2m" `shouldBe` Right "6m^2"
+
+  describe "Expressions with unit conversions" $ do
+    it "1 ft + 1 yd" $ do
+      runTestExpr "1 ft + 1 yd" `shouldBe` Right "4 ft"
+    it "1 yd + 3 ft" $ do
+      runTestExpr "1 yd + 3 ft" `shouldBe` Right "2 yd"

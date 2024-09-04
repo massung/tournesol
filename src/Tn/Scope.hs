@@ -17,7 +17,8 @@ data Scope = Scope
     _dims :: Map Symbol Base,
     _units :: Map Symbol Unit,
     _locals :: Map Symbol Scalar,
-    _ans :: Scalar
+    _ans :: Scalar,
+    _epsilon :: Double
   }
 
 -- scopes are right-biased
@@ -28,7 +29,8 @@ instance Semigroup Scope where
         _dims = a._dims <> b._dims,
         _units = a._units <> b._units,
         _locals = a._locals <> b._locals,
-        _ans = b._ans
+        _ans = b._ans,
+        _epsilon = b._epsilon
       }
 
 instance Monoid Scope where
@@ -38,7 +40,8 @@ instance Monoid Scope where
       _dims = mempty,
       _units = mempty,
       _locals = mempty,
-      _ans = 0
+      _ans = 0,
+      _epsilon = 0.0
     }
 
 defaultDims :: [Base]
