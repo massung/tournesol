@@ -1,23 +1,23 @@
 
 # fundamental dimensions
-dim base angle
-dim base current
-dim base duration
-dim base length
-dim base mass
-dim base storage
-dim base temperature
+dim angle;
+dim current;
+dim duration;
+dim length;
+dim mass;
+dim storage;
+dim temperature;
 
 # derived dimensions
-dim area = length^2
-dim capacitance = duration^4 * current^2 / mass * length^2
-dim charge = current * duration
-dim energy = mass * length^2 / duration
-dim force = mass * length / duration^2
-dim frequency = duration^-1
-dim power = mass * length^2 / duration^3
-dim pressure = mass / length * duration^2
-dim resistance = mass * length^2 / duration^3 * current^-4
-dim speed = length / duration
-dim voltage = mass * length^2 / duration^3 * current
-dim volume = length^3
+#dim area = length^2
+#dim capacitance = duration^4 * current^2 / mass * length^2
+#dim charge = current * duration
+#dim energy = mass * length^2 / duration
+#dim force = mass * length / duration^2
+#dim frequency = duration^-1
+#dim power = mass * length^2 / duration^3
+#dim pressure = mass / length * duration^2
+#dim resistance = mass * length^2 / duration^3 * current^-4
+#dim speed = length / duration
+#dim voltage = mass * length^2 / duration^3 * current
+#dim volume = length^3

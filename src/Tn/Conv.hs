@@ -1,101 +1,87 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Tn.Conv where
 
-{-
-This module handles unit conversions.
+import Algebra.Graph.Labelled.AdjacencyMap
+import qualified Data.Set as S
+import Prelude hiding ((\\))
+import Tn.System
+import Tn.Unit
 
-Operations performed on units is always done at using the base units.
-Units are either the Base units for a Dimension or a pair of functions
-used for converting toBase or fromBase.
+-- labeled graph, units are vertices and conversion functions are edges
+type ConvGraph = AdjacencyMap (Maybe Conv) Unit
 
-For example:
+-- conversion function to Unit
+data Conv = Conv Unit (Rational -> Rational)
 
-meters = Base
-feet = Linear (1250 % 381)  <- (units : base) ratio!
+instance Eq Conv where
+  (==) (Conv a _) (Conv b _) = a == b
 
-celcius = Base
-fahrenheit = Conv $ ConvFunction fToC cToF
--}
+instance Ord Conv where
+  (<=) (Conv a _) (Conv b _) = a <= b
 
--- self-documenting type
-type UnitsPerBase = Rational
-
--- self-documenting type
-type ToBaseConv = Rational -> Rational
-
--- self-documenting type
-type FromBaseConv = Rational -> Rational
-
-data Conv
-  = Base
-  | Linear UnitsPerBase
-  | Conv FromBaseConv ToBaseConv
+instance Show Conv where
+  show (Conv a _) = printf "Conv to %s" (show a)
 
 instance Semigroup Conv where
-  (<>) Base y = y
-  (<>) x Base = x
-  (<>) (Linear x) (Linear y) = Linear $ x * y
-  (<>) (Linear x) (Conv from to) = Conv (from . (* x)) (to . (/ x))
-  (<>) (Conv from to) (Linear y) = Conv ((* y) . from) ((/ y) . to)
-  (<>) (Conv fFrom fTo) (Conv gFrom gTo) = Conv (gFrom . fFrom) (gTo . fTo)
+  (<>) (Conv to f) (Conv _ g) = Conv to (f . g)
 
-instance Monoid Conv where
-  mempty = Base
+-- apply a conversion function
+applyConv :: Rational -> Conv -> Rational
+applyConv n (Conv _ f) = f n
 
-isBase :: Conv -> Bool
-isBase Base = True
-isBase _ = False
+-- create a pair of linear conversions
+linearConvs :: Unit -> Unit -> Rational -> ConvGraph
+linearConvs from to n =
+  let a = edge (Just $ Conv to (/ n)) from to
+      b = edge (Just $ Conv from (* n)) to from
+   in overlay a b
 
-siConvs :: [(String, String, Conv)]
-siConvs =
-  [ ("atto", "a", Linear 1e18),
-    ("femto", "f", Linear 1e15),
-    ("pico", "p", Linear 1e12),
-    ("nano", "n", Linear 1e9),
-    ("micro", "u", Linear 1e6),
-    ("milli", "m", Linear 1e3),
-    ("centi", "c", Linear 1e2),
-    ("deci", "d", Linear 1e1),
-    ("deca", "da", Linear 1e-1),
-    ("hecto", "h", Linear 1e-2),
-    ("kilo", "k", Linear 1e-3),
-    ("mega", "M", Linear 1e-6),
-    ("giga", "G", Linear 1e-9),
-    ("tera", "T", Linear 1e-12),
-    ("peta", "P", Linear 1e-15),
-    ("exa", "E", Linear 1e-18)
-  ]
+derivedConvs :: [(String, String, Rational)] -> Unit -> ConvGraph
+derivedConvs prefixes u = overlays $ fmap convs prefixes
+  where
+    convs (_, p, r) = linearConvs u (unitWithPrefix u p) r
 
-storageConvs :: [(String, String, Conv)]
-storageConvs =
-  [ ("kilo", "k", Linear (1 % 1024)),
-    ("mega", "M", Linear (1 % 1048576)),
-    ("giga", "G", Linear (1 % 1073741824)),
-    ("tera", "T", Linear (1 % 1099511627776)),
-    ("peta", "P", Linear (1 % 1125899906842624)),
-    ("exa", "E", Linear (1 % 1152921504606846976))
-  ]
+-- return a metric conversion graph given the fundamental unit
+siConvs :: Unit -> ConvGraph
+siConvs = derivedConvs siPrefixes
 
--- raises a conversion by a power
-powConv :: Rational -> Conv -> Conv
-powConv 0 _ = Conv (const 1) (const 1)
-powConv _ Base = Base
-powConv 1 x = x
-powConv n (Linear x) =
-  if denominator n == 1
-    then Linear $ x ^^ numerator n
-    else Linear $ toRational (fromRational x ** fromRational n :: Double)
-powConv _ _ = error "cannot exponentiate non-linear conversion"
+-- return a storage conversion graph given the fundamental unit
+storageConvs :: Unit -> ConvGraph
+storageConvs = derivedConvs storagePrefixes
 
--- apply a conversion to a rational to return the base units value
-convToBase :: Rational -> Conv -> Rational
-convToBase n Base = n
-convToBase n (Linear r) = n / r
-convToBase n (Conv _ to) = to n
+-- returns an empty conversion graph
+mkConvGraph :: [ConvGraph] -> ConvGraph
+mkConvGraph = overlays
 
--- apply a conversion to a base rational to return the units value
-convFromBase :: Rational -> Conv -> Rational
-convFromBase n Base = n
-convFromBase n (Linear r) = n * r
-convFromBase n (Conv from _) = from n
+-- search the graph for a valid conversion
+findConv :: Unit -> Unit -> ConvGraph -> Maybe Conv
+findConv from to gr = fmap (foldl1' (<>)) path
+  where
+    path = bfs [[Conv from id]] (S.singleton from) to gr
+
+-- breadth first path search
+bfs :: [[Conv]] -> Set Unit -> Unit -> ConvGraph -> Maybe [Conv]
+bfs [] _ _ _ = Nothing
+bfs q s to gr = find ((== to) . goal) q <|> bfs q' s' to gr
+  where
+    goal :: [Conv] -> Unit
+    goal path = let (Conv u _) = head path in u
+
+    -- return all possible branches of this path
+    walk :: [Conv] -> [[Conv]]
+    walk path =
+      let from = goal path
+          steps = S.toList $ S.difference (postSet from gr) s
+       in [fromJust (edgeLabel from step gr) : path | step <- steps]
+
+    -- next queue with updated paths
+    q' = concatMap walk q
+    s' = foldl (flip S.insert) s [goal p | p <- q']
+
+-- exponentiate a conversion function
+(^.^) :: Conv -> Int -> Conv
+(^.^) (Conv to f) n =
+  if n >= 0
+    then Conv to g
+    else Conv to (/ g 1)
+  where
+    g = foldl' (.) id $ replicate (abs n) f

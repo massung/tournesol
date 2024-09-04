@@ -58,7 +58,6 @@ motd = printf "Tournesol v%d.%d.%d, (c) Jeffrey Massung" major minor patch
     patch = 0 :: Int
 
 printFormat :: Opts -> Scalar -> String
-printFormat _ (InvalidScalar e) = show e
 printFormat opts (Scalar x _) = "%0." ++ prec ++ (if sciNotation opts then "g" else "f")
   where
     prec =
@@ -67,7 +66,6 @@ printFormat opts (Scalar x _) = "%0." ++ prec ++ (if sciNotation opts then "g" e
         else show (fromMaybe 2 $ precision opts)
 
 printAns :: Opts -> Scalar -> IO Scalar
-printAns _ ans@(InvalidScalar e) = print e >> return ans
 printAns opts ans@(Scalar _ u) = do
   if isJust u && not opts.noUnits
     then printf (printFormat opts ans ++ " %U\n") ans ans
@@ -77,7 +75,7 @@ printAns opts ans@(Scalar _ u) = do
 eval :: String -> Scalar -> Scope -> IO (Either String Scalar)
 eval s ans scope = either (return . Left . show) doIt $ runParser exprParser scope "" s
   where
-    doIt expr = either (return . Left . show) (return . Right) $ evalExpr ans expr
+    doIt expr = either (return . Left . show) (return . Right) $ evalExpr (ans, scope) expr
 
 runExpr :: Opts -> Scope -> Scalar -> String -> IO Scalar
 runExpr opts scope ans s =
@@ -106,7 +104,7 @@ main = do
   let inputState = initializeInput defaultSettings
       scope = defaultScope
 
-  -- run supplied expressions or enter repl
+  -- run supplied expressions or enter read-eval-print-loop
   case opts.exprStrings of
     [] -> runInteractive opts scope inputState
     exprs -> mapM_ (runExpr opts scope 0) exprs

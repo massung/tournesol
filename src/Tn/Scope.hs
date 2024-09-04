@@ -4,57 +4,50 @@
 
 module Tn.Scope where
 
+import qualified Algebra.Graph.Labelled.AdjacencyMap as G
 import qualified Data.Map.Strict as M
-import Data.Symbol
-import Text.Parsec hiding ((<|>))
+import Tn.Symbol
 import Tn.Builtins
 import Tn.Conv
-import Tn.Dims
-import Tn.Function
 import Tn.Scalar
-import Tn.Units
+import Tn.Unit
 
 data Scope = Scope
-  { _dims :: M.Map Symbol (Dim, Maybe SourcePos),
-    _units :: M.Map Symbol (Unit, Maybe SourcePos),
-    _funcs :: M.Map Symbol (Function, Maybe SourcePos),
-    _locals :: M.Map Symbol (Scalar, Maybe SourcePos)
+  { _convs :: ConvGraph,
+    _dims :: Map Symbol Base,
+    _units :: Map Symbol Unit,
+    _locals :: Map Symbol Scalar,
+    _ans :: Scalar
   }
-
-instance Show Scope where
-  show scope =
-    let d = M.size scope._dims
-        u = M.size scope._units
-        f = M.size scope._funcs
-     in printf "Scope with %d Dims, %d Units, %d Funcs" d u f
 
 -- scopes are right-biased
 instance Semigroup Scope where
   (<>) a b =
     Scope
-      { _dims = M.union b._dims a._dims,
-        _units = M.union b._units a._units,
-        _funcs = M.union b._funcs a._funcs,
-        _locals = M.union b._locals a._locals
+      { _convs = G.overlay a._convs b._convs,
+        _dims = a._dims <> b._dims,
+        _units = a._units <> b._units,
+        _locals = a._locals <> b._locals,
+        _ans = b._ans
       }
 
 instance Monoid Scope where
   mempty =
     Scope
-      { _dims = mempty,
-        _units = mempty,
-        _funcs = mempty,
-        _locals = mempty
-      }
+    { _convs = G.empty,
+      _dims = mempty,
+      _units = mempty,
+      _locals = mempty,
+      _ans = 0
+    }
 
-defaultDims :: [Dim]
+defaultDims :: [Base]
 defaultDims =
   [ _angle,
     _area,
     _capacitance,
     _charge,
     _current,
-    _duration,
     _energy,
     _force,
     _frequency,
@@ -66,147 +59,141 @@ defaultDims =
     _speed,
     _storage,
     _temperature,
+    _time,
     _voltage,
     _volume
   ]
 
-metricUnits :: [[Unit]]
-metricUnits =
-  [ -- electrcal units
-    siUnits _A,
-    siUnits _C,
-    siUnits _F,
-    siUnits _O,
-    siUnits _V,
-    -- energy units
-    siUnits _J,
-    siUnits _eV,
-    -- force units
-    siUnits _N,
-    -- frequency units
-    siUnits _hz,
-    -- length units
-    siUnits _m,
-    -- mass units
-    siUnits _g,
-    -- power units
-    siUnits _W,
-    -- pressure units
-    siUnits _Pa,
-    -- volume units
-    siUnits _L
-  ]
+fundamentalDims :: [Base]
+fundamentalDims = [dim | dim@(Base _) <- defaultDims]
 
-imperialUnits :: [[Unit]]
-imperialUnits =
-  [ -- area units (imperial)
-    [_ha, _acre],
-    -- energy units (imperial)
-    [_BTU, _thm],
-    -- force units (imperial)
-    [_lbf, _pond],
-    -- length units (imperial)
-    [_mil, _in, _h, _ft, _yd, _ftm, _ch, _fur, _mi, _lea, _cable, _nmi, _link, _rod],
-    -- mass units (imperial)
-    [_oz, _lb, _st, _cwt, _t],
-    -- power units (imperial)
-    [_hp],
-    -- pressure units (imperial)
-    [_psi, _bar],
-    -- volume units (imperial)
-    [_tsp, _tbsp, _floz, _c, _pt, _qt, _gal]
-  ]
+metricConvs :: ConvGraph
+metricConvs =
+  G.overlays
+    [ -- electrical units
+      siConvs _A,
+      siConvs _C,
+      siConvs _F,
+      siConvs _O,
+      siConvs _V,
+      -- energy units
+      siConvs _J,
+      siConvs _eV,
+      -- force units
+      siConvs _N,
+      -- frequency units
+      siConvs _hz,
+      -- length units
+      siConvs _m,
+      -- mass units
+      siConvs _g,
+      -- power units
+      siConvs _W,
+      -- pressure units
+      siConvs _Pa,
+      -- volume units
+      siConvs _L
+    ]
 
-angleUnits :: [[Unit]]
-angleUnits = [[_rad, _grad, _deg, _rev, _turn]]
+imperialConvs :: ConvGraph
+imperialConvs =
+  G.overlays
+    [ -- length units (imperial)
+      linearConvs _ft _m $ 1250 % 381,
+      linearConvs _ft _in $ 1 % 12,
+      linearConvs _ft _yd $ 3 % 1,
+      linearConvs _ft _mi $ 5280 % 1
+    ]
 
-astronomicalUnits :: [[Unit]]
-astronomicalUnits = [[_pc, _au, _ly]]
 
-durationUnits :: [[Unit]]
-durationUnits = [[_s, _min, _hr, _day]]
+  -- [ -- area units (imperial)
+  --   [_ha, _acre],
+  --   -- energy units (imperial)
+  --   [_BTU, _thm],
+  --   -- force units (imperial)
+  --   [_lbf, _pond],
+  --   -- length units (imperial)
+  --   [_mil, _in, _h, _ft, _yd, _ftm, _ch, _fur, _mi, _lea, _cable, _nmi, _link, _rod],
+  --   -- mass units (imperial)
+  --   [_oz, _lb, _st, _cwt, _t],
+  --   -- power units (imperial)
+  --   [_hp],
+  --   -- pressure units (imperial)
+  --   [_psi, _bar],
+  --   -- volume units (imperial)
+  --   [_tsp, _tbsp, _floz, _c, _pt, _qt, _gal]
+  -- ]
 
-speedUnits :: [[Unit]]
-speedUnits = [[_kph, _kn, _mph]]
+angleConvs :: ConvGraph
+angleConvs =
+  G.overlays
+    [ linearConvs _rad _deg $ toRational (pi / 180.0 :: Double),
+      linearConvs _grad _deg $ 400 % 360,
+      linearConvs _rev _deg $ 1 % 360,
+      linearConvs _turn _deg $ 1 % 360
+    ]
 
-diskUnits :: [[Unit]]
-diskUnits =
-  [ storageUnits _B,
-    storageUnits _b
-  ]
+astronomicalConvs :: ConvGraph
+astronomicalConvs =
+  G.overlays
+    [ linearConvs _m _au $ 1 % 149597870700,
+      linearConvs _m _ly $ 1 % 94607304725808000,
+      linearConvs _au _pc $ 1 % 206265
+    ]
 
-temperatureUnits :: [[Unit]]
-temperatureUnits = [[_Tc, _Tf, _Tk, _Tr]]
+durationConvs :: ConvGraph
+durationConvs =
+  G.overlays
+    [ linearConvs _s _min $ 60 % 1,
+      linearConvs _min _hr $ 60  % 1,
+      linearConvs _hr _day $ 24 % 1
+    ]
 
-defaultUnits :: [Unit]
-defaultUnits =
-  concat
-    $ mconcat
-      [ angleUnits,
-        astronomicalUnits,
-        diskUnits,
-        durationUnits,
-        imperialUnits,
-        metricUnits,
-        speedUnits,
-        temperatureUnits
-      ]
+-- speedUnits :: [[Unit]]
+-- speedUnits = [[_kph, _kn, _mph]]
 
-declDim :: Symbol -> Dim -> Maybe SourcePos -> Scope -> Either String Scope
-declDim s dim pos scr =
-  case M.lookup s scr._dims of
-    Just (_, Just orgPos) -> Left $ "dimension already defined at " ++ show orgPos
-    Just (_, _) -> Left "dimension already defined"
-    _ -> Right scr {_dims = M.insert s (dim, pos) scr._dims}
+diskConvs :: ConvGraph
+diskConvs =
+  G.overlays
+    [ storageConvs _B,
+      storageConvs _b
+    ]
 
-declUnit :: Unit -> Maybe SourcePos -> Scope -> Either String Scope
-declUnit u pos scr =
-  case M.lookup u._symbol scr._units of
-    Just (_, Just orgPos) -> Left $ "units already defined at " ++ show orgPos
-    Just (_, _) -> Left "units already defined"
-    _ -> Right scr {_units = M.insert u._symbol (u, pos) scr._units}
+-- temperatureUnits :: [[Unit]]
+-- temperatureUnits = [[_Tc, _Tf, _Tk, _Tr]]
 
-declFunction :: Symbol -> (Function, Maybe SourcePos) -> Scope -> Either String Scope
-declFunction s func scr =
-  if isJust $ M.lookup s scr._funcs
-    then Left "function already defined"
-    else Right scr {_funcs = M.insert s func scr._funcs}
-
-declUnits :: [Unit] -> Maybe SourcePos -> Scope -> Either String Scope
-declUnits us pos scr = foldM decl scr us
-  where
-    decl s u = declUnit u pos s
-
-declDefaultDims :: Scope -> Either String Scope
-declDefaultDims scr = foldM decl scr defaultDims
-  where
-    decl script dim@(Fundamental s) = declDim s dim Nothing script
-    decl script dim@(Derived s _) = declDim s dim Nothing script
-
-declDefaultUnits :: Scope -> Either String Scope
-declDefaultUnits scr = foldM decl scr defaultUnits
-  where
-    decl script u = declUnit u Nothing script
-
-declDefaultFunctions :: Scope -> Either String Scope
-declDefaultFunctions scr = foldM decl scr defaultFunctions
-  where
-    decl script (name, func) = declFunction name (func, Nothing) script
+defaultConvs :: ConvGraph
+defaultConvs =
+  G.overlays
+    [ angleConvs,
+      astronomicalConvs,
+      diskConvs,
+      durationConvs,
+      imperialConvs,
+      metricConvs
+      --speedConvs,
+      --temperatureConvs
+    ]
 
 defaultScope :: Scope
-defaultScope = case foldM (&) mempty defaults of
-  Left err -> error err
-  Right script -> script
+defaultScope =
+  mempty
+    { _convs=defaultConvs,
+      _dims=M.fromList dims,
+      _units=M.fromList units
+    }
   where
-    defaults :: [Scope -> Either String Scope]
-    defaults =
-      [ declDefaultDims,
-        declDefaultUnits,
-        declDefaultFunctions
-      ]
+    units = [(s, u) | u@(Unit s _) <- G.vertexList defaultConvs]
+    dims = [(s, d) | d@(Base s) <- fundamentalDims]
 
-baseUnits :: Scope -> [(Unit, Maybe SourcePos)]
-baseUnits scope = M.elems $ M.filter (isBase . _conv . fst) scope._units
+declDim :: Symbol -> Scope -> Either String Scope
+declDim d scope =
+  if M.member d scope._dims
+    then Left "dimension already defined"
+    else Right scope {_dims = M.insert d (Base d) scope._dims}
 
-baseDims :: Scope -> [Dim]
-baseDims scope = map fst $ M.elems scope._dims
+declUnit :: Unit -> Scope -> Either String Scope
+declUnit u@(Unit s _) scope =
+  if M.member s scope._units
+    then Left "unit already defined"
+    else Right scope {_units = M.insert s u scope._units}

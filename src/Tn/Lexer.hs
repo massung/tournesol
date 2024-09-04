@@ -15,8 +15,8 @@ lexer = makeTokenParser lang
   where
     lang =
       LanguageDef
-        { commentStart = "",
-          commentEnd = "",
+        { commentStart = "\"",
+          commentEnd = "\"",
           commentLine = "#",
           nestedComments = False,
           identStart = letter <|> char '_',
@@ -28,23 +28,23 @@ lexer = makeTokenParser lang
           caseSensitive = True
         }
 
-rationalParser :: Parsec String Scope Rational
-rationalParser = either fromInteger toRational <$> naturalOrFloat lexer
+rationalParser :: Parsec String Scope Double
+rationalParser = either fromInteger id <$> naturalOrFloat lexer
 
-exponentParser :: Parsec String Scope Rational
+exponentParser :: Parsec String Scope Int
 exponentParser = option 1 $ do
   _ <- lexeme lexer $ char '^'
   s <- signParser
-  e <- rationalParser
-  return $ e * s
+  n <- natural lexer <&> fromInteger
+  return $ n * s
 
-signParser :: Parsec String Scope Rational
+signParser :: Parsec String Scope Int
 signParser = option 1 (neg <|> pos)
   where
     neg = reservedOp lexer "-" >> return (-1)
     pos = reservedOp lexer "+" >> return 1
 
-unitsOpTable :: (Disjoin a) => OperatorTable String Scope Identity a
+unitsOpTable :: (Ord a) => OperatorTable String Scope Identity (Dims a)
 unitsOpTable =
   [ [ Infix (do reservedOp lexer "*"; return (<>)) AssocLeft,
       Infix (do reservedOp lexer "/"; return (</>)) AssocLeft

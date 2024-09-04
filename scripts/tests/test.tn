@@ -1,24 +1,25 @@
-# define a couple dimensions
-dim base length;
-dim base time;
+# declare a couple dimensions
+dim length;
+dim time;
 
-# define the base units for each dimension
-unit base si m "meters" = length;
-unit base s "seconds"   = time;
+# declare a compound dimension
+#dim speed = length / time;
 
-# derived units
-unit ft "feet"   = 1250 / 381 m;
-unit in "inches" = 12 / 1 ft;
-unit yd "yards"  = 1 / 3 ft;
-unit mi "miles"  = 1 / 5280 ft;
+# declare the base units for each dimension
+unit m = base si length;
+unit s = base time;
 
+# derived length units
+unit ft = 1250 / 381 m;
+unit in = 12 / 1 ft;
+unit yd = 1 / 3 ft;
+unit mi = 1 / 5280 ft;
+
+# derived time units
 unit min = 1 / 60 s;
 unit hr  = 1 / 60 min;
 unit day = 1 / 24 hr;
 
-# create a new, compound dimension
-dim speed = length / time;
-
-# define some units for the compound dimension
-unit alias mph = mi / hr;
-unit alias kph = km / hr;
+# derived speed units
+unit kph = km / hr;
+unit mph = mi / hr;

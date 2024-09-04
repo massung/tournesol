@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -27,17 +27,21 @@ library
   exposed-modules:
       Tn.Builtins
       Tn.Conv
+      Tn.Debug
       Tn.Dims
       Tn.Error
       Tn.Eval
       Tn.Expr
       Tn.Function
       Tn.Lexer
+      Tn.Ops
       Tn.Parser
       Tn.Scalar
       Tn.Scope
       Tn.Script
-      Tn.Units
+      Tn.Symbol
+      Tn.System
+      Tn.Unit
   other-modules:
       Paths_tn
   autogen-modules:
@@ -46,13 +50,15 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      cmdargs
+      algebraic-graphs
+    , bytestring-trie
+    , cmdargs
     , extra
     , file-embed
     , haskeline
     , parsec
     , rerebase
-    , symbol
+    , utf8-string
   default-language: Haskell2010
 
 executable tn-exe
@@ -65,14 +71,16 @@ executable tn-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      cmdargs
+      algebraic-graphs
+    , bytestring-trie
+    , cmdargs
     , extra
     , file-embed
     , haskeline
     , parsec
     , rerebase
-    , symbol
     , tn
+    , utf8-string
   default-language: Haskell2010
 
 test-suite tn-test
@@ -86,13 +94,15 @@ test-suite tn-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      cmdargs
+      algebraic-graphs
+    , bytestring-trie
+    , cmdargs
     , extra
     , file-embed
     , haskeline
     , hspec
     , parsec
     , rerebase
-    , symbol
     , tn
+    , utf8-string
   default-language: Haskell2010

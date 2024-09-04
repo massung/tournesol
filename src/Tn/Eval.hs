@@ -3,37 +3,55 @@ module Tn.Eval (evalExpr) where
 import Tn.Error
 import Tn.Expr
 import Tn.Function
+import Tn.Ops
+import Tn.Scope
 import Tn.Scalar
-import Tn.Units
+import Tn.Unit
 
-type EvalResultT = ExceptT EvalError (State Scalar)
+type EvalResultT = ExceptT String (State (Scalar, Scope))
 
-evalExpr :: Scalar -> Expr -> Either EvalError Scalar
-evalExpr ans expr = evalState (runExceptT $ evalExprTerm expr) ans
+evalExpr :: (Scalar, Scope) -> Expr -> Either String Scalar
+evalExpr st expr = evalState (runExceptT $ evalExprTerm expr) st
 
 evalExprTerm :: Expr -> EvalResultT Scalar
-evalExprTerm Ans = get
+evalExprTerm Ans = get <&> fst
 evalExprTerm (Term x) = return x
 evalExprTerm (Convert to x) = evalConvert x to
 evalExprTerm (Unary f x) = evalUnary f x
 evalExprTerm (Binary f x y) = evalBinary f x y
-evalExprTerm (Apply f xs) = evalApply f xs
+-- evalExprTerm (Apply f xs) = evalApply f xs
 
 evalConvert :: Expr -> Units -> EvalResultT Scalar
-evalConvert x to = evalExprTerm x <&> convertTo to
+evalConvert term units = do
+  x <- evalExprTerm term
+  scope <- get <&> snd
 
-evalUnary :: (Scalar -> Either EvalError Scalar) -> Expr -> EvalResultT Scalar
-evalUnary f x = do
-  x' <- evalExprTerm x
-  either throwError return $ f x'
+  -- attempt to convert
+  let ans = runWithScope scope $ convertUnits x units
+   in either throwError return ans
 
-evalBinary :: (Scalar -> Scalar -> Either EvalError Scalar) -> Expr -> Expr -> EvalResultT Scalar
+evalUnary :: (Scalar -> OpResultT Scalar) -> Expr -> EvalResultT Scalar
+evalUnary f term = do
+  x <- evalExprTerm term
+  scope <- get <&> snd
+
+  -- attempt the operation
+  let ans = runWithScope scope $ f x
+   in either throwError return ans
+
+evalBinary :: (Scalar -> Scalar -> OpResultT Scalar) -> Expr -> Expr -> EvalResultT Scalar
 evalBinary f x y = do
   x' <- evalExprTerm x
   y' <- evalExprTerm y
-  either throwError return $ f x' y'
 
-evalApply :: Function -> [Expr] -> EvalResultT Scalar
-evalApply f xs = do
-  xs' <- sequence [evalExprTerm x | x <- xs]
-  either throwError return $ f xs'
+  -- get the conversion scope
+  scope <- get <&> snd
+
+  -- attempt the operation
+  let ans = runWithScope scope $ f x' y'
+   in either throwError return ans
+
+-- evalApply :: Function -> [Expr] -> EvalResultT Scope
+-- evalApply f xs = do
+--   xs' <- sequence [evalExprTerm x | x <- xs]
+--   either throwError return $ f xs'

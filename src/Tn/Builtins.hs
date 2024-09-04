@@ -3,354 +3,358 @@
 
 module Tn.Builtins where
 
-import Tn.Conv
-import Tn.Dims
-import Tn.Units
+import Tn.Unit
 
 --
--- dimensions
+-- fundamental dimensions
 --
 
-_angle :: Dim
-_angle = Fundamental "angle"
+_angle :: Base
+_angle = Base "angle"
 
-_area :: Dim
-_area = Derived "area" $ Dims [(_length, 2)]
+_current :: Base
+_current = Base "current"
 
-_capacitance :: Dim
-_capacitance = Derived "capacitance" $ Dims [(_duration, 4), (_current, 2), (_mass, -1), (_length, -2)]
+_length :: Base
+_length = Base "length"
 
-_charge :: Dim
-_charge = Derived "charge" $ Dims [(_current, 1), (_duration, 1)]
+_mass :: Base
+_mass = Base "mass"
 
-_current :: Dim
-_current = Fundamental "current"
+_storage :: Base
+_storage =  Base "storage"
 
-_duration :: Dim
-_duration = Fundamental "duration"
+_temperature :: Base
+_temperature = Base  "temperature"
 
-_energy :: Dim
-_energy = Derived "energy" $ Dims [(_mass, 1), (_length, 2), (_duration, -2)]
-
-_force :: Dim
-_force = Derived "force" $ Dims [(_mass, 1), (_length, 1), (_duration, -2)]
-
-_frequency :: Dim
-_frequency = Derived "frequency" $ Dims [(_duration, -1)]
-
-_length :: Dim
-_length = Fundamental "length"
-
-_mass :: Dim
-_mass = Fundamental "mass"
-
-_power :: Dim
-_power = Derived "power" $ Dims [(_mass, 1), (_length, 2), (_duration, -3)]
-
-_pressure :: Dim
-_pressure = Derived "pressure" $ Dims [(_mass, 1), (_length, -1), (_duration, -2)]
-
-_resistance :: Dim
-_resistance = Derived "resistance" $ Dims [(_mass, 1), (_length, 2), (_duration, -3), (_current, -4)]
-
-_speed :: Dim
-_speed = Derived "speed" $ Dims [(_length, 1), (_duration, -1)]
-
-_storage :: Dim
-_storage = Fundamental "storage"
-
-_temperature :: Dim
-_temperature = Fundamental "temperature"
-
-_voltage :: Dim
-_voltage = Derived "voltage" $ Dims [(_mass, 1), (_length, 2), (_duration, -3), (_current, -1)]
-
-_volume :: Dim
-_volume = Derived "volume" $ Dims [(_length, 3)]
+_time :: Base
+_time = Base  "time"
 
 --
--- constants
+-- derived units
 --
 
-_pi :: Rational
-_pi = toRational (pi :: Double)
+_area :: Base
+_area = Derived [(_ft, 2)]
+
+_capacitance :: Base
+_capacitance = Derived [(_s, 4), (_A, 2), (_kg, -1), (_m, -2)]
+
+_charge :: Base
+_charge = Derived [(_A, 1), (_s, 1)]
+
+_energy :: Base
+_energy = Derived [(_kg, 1),(_m, 2), (_s, -2)]
+
+_force :: Base
+_force = Derived [(_kg, 1), (_m, 1), (_s, -2)]
+
+_frequency :: Base
+_frequency = Derived [(_s, -1)]
+
+_momentum :: Base
+_momentum = Derived [(_kg, 1), (_m, 1), (_s, -1)]
+
+_power :: Base
+_power = Derived [(_kg, 1), (_m, 2), (_s, -3)]
+
+_pressure :: Base
+_pressure = Derived [(_kg, 1), (_m, -1), (_s, -2)]
+
+_resistance :: Base
+_resistance = Derived [(_kg, 1), (_m, 2), (_s, -3), (_A, -4)]
+
+_speed :: Base
+_speed = Derived [(_m, 1), (_s, -1)]
+
+_voltage :: Base
+_voltage = Derived [(_kg, 1), (_m, 2), (_s, -3), (_A, -1)]
+
+_volume :: Base
+_volume = Derived [(_m, 3)]
 
 --
 -- angle units
 --
 
 _rad :: Unit
-_rad = Unit {_symbol = "rad", _name = "radians", _dim = _angle, _conv = Base}
+_rad = Unit "rad" _angle
 
 _grad :: Unit
-_grad = Unit {_symbol = "grad", _name = "gradians", _dim = _angle, _conv = Linear (200 / _pi)}
+_grad = Unit "grad" _angle
 
 _deg :: Unit
-_deg = Unit {_symbol = "deg", _name = "degrees", _dim = _angle, _conv = Linear (180 / _pi)}
+_deg = Unit "deg" _angle
 
 _rev :: Unit
-_rev = Unit {_symbol = "rev", _name = "revolutions", _dim = _angle, _conv = Linear ((1 % 2) / _pi)}
+_rev = Unit "rev" _angle
 
 _turn :: Unit
-_turn = Unit {_symbol = "turn", _name = "turns", _dim = _angle, _conv = Linear ((1 % 2) / _pi)}
+_turn = Unit "turn" _angle
 
 --
 -- area units
 --
 
 _ha :: Unit
-_ha = Unit {_symbol = "ha", _name = "hectares", _dim = _area, _conv = Linear 1e-4}
+_ha = Unit "ha" _area
 
 _acre :: Unit
-_acre = Unit {_symbol = "acre", _name = "acres", _dim = _area, _conv = Linear (78125 % 316160658)}
+_acre = Unit "acre" _area
 
 --
 -- duration units
 --
 
 _s :: Unit
-_s = Unit {_symbol = "s", _name = "seconds", _dim = _duration, _conv = Base}
+_s = Unit "s" _time
 
 _min :: Unit
-_min = Unit {_symbol = "min", _name = "minutes", _dim = _duration, _conv = Linear (1 % 60)}
+_min = Unit "min" _time
 
 _hr :: Unit
-_hr = Unit {_symbol = "hr", _name = "hours", _dim = _duration, _conv = Linear (1 % 3600)}
+_hr = Unit "hr" _time
 
 _day :: Unit
-_day = Unit {_symbol = "day", _name = "days", _dim = _duration, _conv = Linear (1 % 86400)}
+_day = Unit "day" _time
 
 --
 -- electrical units
 --
 
 _F :: Unit
-_F = Unit {_symbol = "F", _name = "farads", _dim = _capacitance, _conv = Base}
+_F = Unit "F" _capacitance
 
 _C :: Unit
-_C = Unit {_symbol = "C", _name = "coulombs", _dim = _charge, _conv = Base}
+_C = Unit "C" _charge
 
 _A :: Unit
-_A = Unit {_symbol = "A", _name = "amperes", _dim = _current, _conv = Base}
+_A = Unit "A" _current
 
 _O :: Unit
-_O = Unit {_symbol = "O", _name = "ohms", _dim = _resistance, _conv = Base}
+_O = Unit "O" _resistance
 
 _V :: Unit
-_V = Unit {_symbol = "V", _name = "volts", _dim = _voltage, _conv = Base}
+_V = Unit "V" _voltage
 
 --
 -- energy units
 --
 
 _J :: Unit
-_J = Unit {_symbol = "J", _name = "joules", _dim = _energy, _conv = Base}
+_J = Unit "J" _energy
 
 _eV :: Unit
-_eV = Unit {_symbol = "eV", _name = "electron volts", _dim = _energy, _conv = Linear (5000000000000000000000000000 % 801088317)}
+_eV = Unit "eV" _energy
 
 _BTU :: Unit
-_BTU = Unit {_symbol = "BTU", _name = "British thermal units", _dim = _energy, _conv = Linear (50000000 % 52752792631)}
+_BTU = Unit "BTU" _energy
 
 _thm :: Unit
-_thm = Unit {_symbol = "thm", _name = "therms", _dim = _energy, _conv = Linear (1 % 105480400)}
+_thm = Unit "thm" _energy
 
 --
 -- force units
 --
 
 _N :: Unit
-_N = Unit {_symbol = "N", _name = "newtons", _dim = _force, _conv = Base}
+_N = Unit "N" _force
 
 _lbf :: Unit
-_lbf = Unit {_symbol = "lbf", _name = "pounds-force", _dim = _force, _conv = Linear (2000000000000 % 8896443230521)}
+_lbf = Unit "lbf" _force
 
 _pond :: Unit
-_pond = Unit {_symbol = "pond", _name = "ponds", _dim = _force, _conv = Linear (20000000 % 1961333)}
+_pond = Unit "pond" _force
 
 --
 -- frequency units
 --
 
 _hz :: Unit
-_hz = Unit {_symbol = "hz", _name = "hertz", _dim = _frequency, _conv = Base}
+_hz = Unit "hz" _frequency
 
 --
 -- length units
 --
 
 _m :: Unit
-_m = Unit {_symbol = "m", _name = "meters", _dim = _length, _conv = Base}
+_m = Unit "m" _length
 
 _mil :: Unit
-_mil = Unit {_symbol = "mil", _name = "mils", _dim = _length, _conv = Linear 39370}
+_mil = Unit "mil" _length
 
 _in :: Unit
-_in = Unit {_symbol = "in", _name = "inches", _dim = _length, _conv = Linear (5000 % 127)}
+_in = Unit "in" _length
 
 _h :: Unit
-_h = Unit {_symbol = "h", _name = "hands", _dim = _length, _conv = Linear (3750 % 381)}
+_h = Unit "h" _length
 
 _ft :: Unit
-_ft = Unit {_symbol = "ft", _name = "foots", _dim = _length, _conv = Linear (1250 % 381)}
+_ft = Unit "ft" _length
 
 _yd :: Unit
-_yd = Unit {_symbol = "yd", _name = "yards", _dim = _length, _conv = Linear (1250 % 1143)}
+_yd = Unit "yd" _length
 
 _ftm :: Unit
-_ftm = Unit {_symbol = "ftm", _name = "fathoms", _dim = _length, _conv = Linear (625 % 1143)}
+_ftm = Unit "ftm" _length
 
 _ch :: Unit
-_ch = Unit {_symbol = "ch", _name = "chains", _dim = _length, _conv = Linear (625 % 12573)}
+_ch = Unit "chain" _length
 
 _fur :: Unit
-_fur = Unit {_symbol = "fur", _name = "furlongs", _dim = _length, _conv = Linear (125 % 25146)}
+_fur = Unit "fur" _length
 
 _mi :: Unit
-_mi = Unit {_symbol = "mi", _name = "miles", _dim = _length, _conv = Linear (125 % 201168)}
+_mi = Unit "mi" _length
 
 _lea :: Unit
-_lea = Unit {_symbol = "lea", _name = "leagues", _dim = _length, _conv = Linear (125 % 603504)}
+_lea = Unit "lea" _length
 
 _cable :: Unit
-_cable = Unit {_symbol = "cable", _name = "cables", _dim = _length, _conv = Linear (125 % 27432)}
+_cable = Unit "cable" _length
 
 _nmi :: Unit
-_nmi = Unit {_symbol = "nmi", _name = "nautical miles", _dim = _length, _conv = Linear (1 % 1852)}
+_nmi = Unit "nmi" _length
 
 _link :: Unit
-_link = Unit {_symbol = "link", _name = "links", _dim = _length, _conv = Linear (62500 % 12573)}
+_link = Unit "link" _length
 
 _rod :: Unit
-_rod = Unit {_symbol = "rod", _name = "rods", _dim = _length, _conv = Linear (2500 % 12573)}
+_rod = Unit "rod" _length
 
 --
 -- length units (astronomical)
 --
 
 _pc :: Unit
-_pc = Unit {_symbol = "pc", _name = "parsecs", _dim = _length, _conv = Linear (1 % 30856775814913670)}
+_pc = Unit "pc" _length
 
 _au :: Unit
-_au = Unit {_symbol = "au", _name = "astronomical units", _dim = _length, _conv = Linear (1 % 149597870700)}
+_au = Unit "au" _length
 
 _ly :: Unit
-_ly = Unit {_symbol = "ly", _name = "lightyears", _dim = _length, _conv = Linear (1 % 9460730472580800)}
+_ly = Unit "ly" _length
 
 --
 -- mass units
 --
 
 _g :: Unit
-_g = Unit {_symbol = "g", _name = "grams", _dim = _mass, _conv = Base}
+_g = Unit "g" _mass
+
+_kg :: Unit
+_kg = Unit "kg" _mass
 
 _oz :: Unit
-_oz = Unit {_symbol = "oz", _name = "ounces", _dim = _mass, _conv = Linear (1600000000 % 45359237)}
+_oz = Unit "oz" _mass
 
 _lb :: Unit
-_lb = Unit {_symbol = "lb", _name = "pounds", _dim = _mass, _conv = Linear (100000000 % 45359237)}
+_lb = Unit "lb" _mass
 
 _st :: Unit
-_st = Unit {_symbol = "st", _name = "stones", _dim = _mass, _conv = Linear (50000000 % 317514659)}
+_st = Unit "st" _mass
 
 _cwt :: Unit
-_cwt = Unit {_symbol = "cwt", _name = "hundred weights", _dim = _mass, _conv = Linear (1000000 % 45359237)}
+_cwt = Unit "cwt" _mass
 
 _t :: Unit
-_t = Unit {_symbol = "t", _name = "tons", _dim = _mass, _conv = Linear (50000 % 45359237)}
+_t = Unit  "t" _mass
 
+--
 -- power units
+--
+
 _W :: Unit
-_W = Unit {_symbol = "W", _name = "watts", _dim = _power, _conv = Base}
+_W = Unit "W" _power
 
 _hp :: Unit
-_hp = Unit {_symbol = "hp", _name = "horsepower", _dim = _power, _conv = Linear 0.001341}
+_hp = Unit "hp" _power
 
 --
 -- pressure units
 --
 
 _Pa :: Unit
-_Pa = Unit {_symbol = "Pa", _name = "pascals", _dim = _pressure, _conv = Base}
+_Pa = Unit "Pa" _pressure
 
 _psi :: Unit
-_psi = Unit {_symbol = "psi", _name = "pounds-force per square inch", _dim = _pressure, _conv = Linear 145e-6}
+_psi = Unit "psi" _pressure
 
 _bar :: Unit
-_bar = Unit {_symbol = "bar", _name = "bars", _dim = _pressure, _conv = Linear 1e-5}
+_bar = Unit "bar" _pressure
 
 --
 -- speed units
 --
 
 _kph :: Unit
-_kph = Unit {_symbol = "kph", _name = "kilometers per hour", _dim = _speed, _conv = Linear (18 % 5)}
+_kph = Unit "kph" _speed
 
 _kn :: Unit
-_kn = Unit {_symbol = "kn", _name = "knots", _dim = _speed, _conv = Linear (900 % 463)}
+_kn = Unit "kn" _speed
 
 _mph :: Unit
-_mph = Unit {_symbol = "mph", _name = "miles per hour", _dim = _speed, _conv = Linear (3125 % 1397)}
+_mph = Unit "mph" _speed
 
 --
 -- storage units
 --
 
 _B :: Unit
-_B = Unit {_symbol = "B", _name = "bytes", _dim = _storage, _conv = Base}
+_B = Unit "B" _storage
 
 _b :: Unit
-_b = Unit {_symbol = "b", _name = "bits", _dim = _storage, _conv = Linear 8}
+_b = Unit "b" _storage
 
 --
 -- temperature units
 --
 
 _Tc :: Unit
-_Tc = Unit {_symbol = "Tc", _name = "degrees celcius", _dim = _temperature, _conv = Base}
+_Tc = Unit "Tc" _temperature
 
 _Tf :: Unit
-_Tf = Unit {_symbol = "Tf", _name = "degrees fahrenheit", _dim = _temperature, _conv = Conv cToF fToC}
-  where
-    cToF x = x * (9 % 5) + 32
-    fToC x = (x - 32) * (5 % 9)
+_Tf = Unit "Tf" _temperature
+  -- where
+  --   cToF x = x * (9 % 5) + 32
+  --   fToC x = (x - 32) * (5 % 9)
 
 _Tk :: Unit
-_Tk = Unit {_symbol = "Tk", _name = "degrees kelvin", _dim = _temperature, _conv = Conv cToK kToC}
-  where
-    cToK x = x + 273.15
-    kToC x = x - 273.15
+_Tk = Unit "Tk" _temperature
+  -- where
+  --   cToK x = x + 273.15
+  --   kToC x = x - 273.15
 
 _Tr :: Unit
-_Tr = Unit {_symbol = "Tr", _name = "degrees rankine", _dim = _temperature, _conv = Conv cToR rToC}
-  where
-    cToR x = x * (9 % 5) + 491.67
-    rToC x = (x - 491.67) * (5 % 9)
+_Tr = Unit "Tr" _temperature
+  -- where
+  --   cToR x = x * (9 % 5) + 491.67
+  --   rToC x = (x - 491.67) * (5 % 9)
 
 --
 -- volume units
 --
 
 _L :: Unit
-_L = Unit {_symbol = "L", _name = "liters", _dim = _volume, _conv = Linear 1000}
+_L = Unit "L" _volume
 
 _tsp :: Unit
-_tsp = Unit {_symbol = "tsp", _name = "teaspoons", _dim = _volume, _conv = Linear (96000000000000 % 473176473)}
+_tsp = Unit "tsp" _volume
 
 _tbsp :: Unit
-_tbsp = Unit {_symbol = "tbsp", _name = "tablespoons", _dim = _volume, _conv = Linear (32000000000000 % 473176473)}
+_tbsp = Unit "tbsp" _volume
 
 _floz :: Unit
-_floz = Unit {_symbol = "floz", _name = "floor ounces", _dim = _volume, _conv = Linear (16000000000000 % 473176473)}
+_floz = Unit "floz" _volume
 
 _c :: Unit
-_c = Unit {_symbol = "c", _name = "cups", _dim = _volume, _conv = Linear (2000000000000 % 473176473)}
+_c = Unit "c" _volume
 
 _pt :: Unit
-_pt = Unit {_symbol = "pt", _name = "pints", _dim = _volume, _conv = Linear (1000000000000 % 473176473)}
+_pt = Unit "pt" _volume
 
 _qt :: Unit
-_qt = Unit {_symbol = "qt", _name = "quarts", _dim = _volume, _conv = Linear (500000000000 % 473176473)}
+_qt = Unit "qt" _volume
 
 _gal :: Unit
-_gal = Unit {_symbol = "gal", _name = "gallons", _dim = _volume, _conv = Linear (125000000000 % 473176473)}
+_gal = Unit "gal" _volume

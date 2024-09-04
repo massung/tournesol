@@ -21,12 +21,14 @@ description: Please see the README on GitHub at <https://github.com/massung/tn#r
 
 dependencies:
   - rerebase
-  - extra
+  - algebraic-graphs
+  - bytestring-trie
   - cmdargs
-  - parsec
-  - haskeline
+  - extra
   - file-embed
-  - symbol
+  - haskeline
+  - parsec
+  - utf8-string
 
 ghc-options:
   - -Wall

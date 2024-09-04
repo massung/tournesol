@@ -1,3 +1,14 @@
+:set +m
 :set -XOverloadedLists
 :set -XOverloadedRecordDot
 :set -XOverloadedStrings
+
+{-
+m = Unit "m" "meters" (Base "length")
+ft = Unit "ft" "feet" (Linear [(m, 1)] $ 1250 % 381)
+s = Unit "s" "seconds" (Base "time")
+g = Unit "g" "grams" (Base "mass")
+kg = Unit "kg" "kilograms" (Linear [(g, 1)] $ 1 % 1000)
+j = Unit "J" "joules" (Linear [(kg, 1), (m,2), (s,-2)] 1)
+n = Unit "N" "newtons" (Linear [(kg, 1), (m,1), (s,-2)] 1)
+-}

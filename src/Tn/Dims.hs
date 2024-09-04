@@ -1,83 +1,81 @@
 {-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Tn.Dims where
 
-{-
-Dimensions are the most fundamental type for units. Examples include length,
-mass, and time. They are also associative and can be combined:
-
-length = Fundamental "length"
-mass = Fundamental "mass"
-duration = Fundamental "duration"
-
-area = Derived "area" [(length, 2)]
-force = Derived "force" [(mass, 1), (length, 1), (duration, -2)]
--}
-
 import qualified Data.Map.Strict as M
-import Data.Symbol
+import Data.Tuple.Extra
 
-data Dim
-  = Fundamental Symbol
-  | Derived Symbol Dims
-
-instance Show Dim where
-  show (Fundamental a) = unintern a
-  show (Derived a _) = unintern a
-
-instance Eq Dim where
-  (==) (Fundamental a) (Fundamental b) = a == b
-  (==) (Derived a x) (Derived b y) = a == b || x == y
-  (==) _ _ = False
-
-instance Ord Dim where
-  compare (Fundamental a) (Fundamental b) = compare a b
-  compare (Derived a _) (Derived b _) = compare a b
-  compare (Fundamental a) (Derived b _) = compare a b
-  compare (Derived a _) (Fundamental b) = compare a b
-
--- dimension : exponent
-type DimMap = M.Map Dim Rational
-
-newtype Dims = Dims DimMap
+newtype Dims a = Dims (M.Map a Int)
   deriving (Eq)
 
-instance Show Dims where
-  show (Dims d) = showDimsMap d
+instance (Ord a) => IsList (Dims a) where
+  type Item (Dims a) = (a, Int)
 
-instance Semigroup Dims where
+  -- convert from [(dim, n)] to Dims
+  fromList = Dims . fromList
+
+  -- convert from dimensions to [(dim, n)] list
+  toList (Dims a) = toList a
+
+instance (Ord a) => Semigroup (Dims a) where
   (<>) (Dims a) (Dims b) = Dims $ M.filter (/= 0) $ M.unionWith (+) a b
 
-instance Monoid Dims where
+instance (Ord a) => Monoid (Dims a) where
   mempty = Dims M.empty
 
-class (Semigroup a) => Disjoin a where
-  (</>) :: a -> a -> a
+instance (Show a) => Show (Dims a) where
+  show (Dims m) =
+    let (num, den) = M.partition (> 0) m
+     in if
+          | null num -> show' den
+          | null den -> show' num
+          | otherwise -> show' num ++ "/" ++ show' (M.map abs den)
+    where
+      show' dims = unwords [showExp u | u <- M.toList dims]
 
-instance Disjoin Dims where
-  (</>) a (Dims b) = a <> Dims (M.map negate b)
+      -- show a single dimension with optional exponent
+      showExp (u, 1) = show u
+      showExp (u, n) = printf "%s^%d" (show u) n
 
-fundamentalDims :: Dim -> Dims
-fundamentalDims dim@(Fundamental _) = Dims [(dim, 1)]
-fundamentalDims (Derived _ (Dims m)) = M.foldlWithKey' reduceDims mempty m
-  where
-    reduceDims dims d n =
-      let (Dims m') = fundamentalDims d in dims <> Dims (M.map (* n) m')
+-- reciprocal of (<>)
+(</>) :: (Ord a) => Dims a -> Dims a -> Dims a
+(</>) a b = a <> recipDims b
 
-showDimsMap :: (Show a) => Map a Rational -> String
-showDimsMap m =
-  let (num, den) = M.partition (> 0) m
-   in if
-        | null num -> show' den
-        | null den -> show' num
-        | otherwise -> show' num ++ "/" ++ show' (M.map abs den)
-  where
-    show' units = unwords [showExp u | u <- M.toList units]
+-- define a singleton dimension
+singleton :: a -> Dims a
+singleton a = Dims $ M.singleton a 1
 
-    -- show a single unit with optional exponent
-    showExp (u, 1) = show u
-    showExp (u, n) =
-      if denominator n == 1
-        then show u ++ "^" ++ show (numerator n)
-        else show u ++ "^" ++ show (fromRational n :: Double)
+-- return the unique keys of a dimensions map
+dimsKeys :: Dims a -> [a]
+dimsKeys (Dims m) = M.keys m
+
+-- return the exponent for a given key
+dimExponent :: (Ord a) => a -> Dims a -> Maybe Int
+dimExponent a (Dims m) = M.lookup a m
+
+-- raise dimension exponents to power
+(*^) :: (Ord a) => Dims a -> Int -> Dims a
+(*^) _ 0 = mempty
+(*^) dims 1 = dims
+(*^) (Dims m) n = Dims $ M.map (* n) m
+
+-- true if the dimensions are empty
+nullDims :: Dims a -> Bool
+nullDims (Dims m) = M.null m
+
+-- return the reciprocal dimensions
+recipDims :: Dims a -> Dims a
+recipDims = mapDims negate
+
+-- map dimensions, returning
+mapDims :: (Int -> Int) -> Dims a -> Dims a
+mapDims f (Dims m) = Dims $ M.map f m
+
+-- fold over the dimensions
+foldDims :: (b -> a -> Int -> b) -> b -> Dims a -> b
+foldDims f i (Dims m) = M.foldlWithKey' f i m
+
+-- split dimensions into numerator and denominator
+partitionDims :: Dims a -> (Dims a, Dims a)
+partitionDims (Dims m) = both Dims $ M.partition (>= 0) m

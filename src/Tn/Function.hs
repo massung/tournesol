@@ -3,17 +3,17 @@
 
 module Tn.Function where
 
-import Data.Symbol
+import Tn.Symbol
 import Tn.Builtins
 import Tn.Dims
 import Tn.Error
 import Tn.Scalar
-import Tn.Units
+import Tn.Unit
 import Prelude hiding (Any, Arg)
 
 -- expression function
 type Function = [Scalar] -> Either EvalError Scalar
-
+{-
 -- function argument
 data Arg
   = Any
@@ -54,7 +54,7 @@ defaultFunctions =
     -- ("round", unaryFunc (mapFloating round) Any),
     -- ("truncate", unaryFunc (mapFloating truncate) Any)
   ]
-
+-}
 {-
       ("pi", func _pi []),
     ]
@@ -134,7 +134,7 @@ _acosh _ = Left WrongArity
 
 _atanh [x] = unaryDef atanh (Right x) >>= (`convertTo` radians)
 _atanh _ = Left WrongArity
--}
+
 
 wrapFunc :: Function -> [Arg] -> Function
 wrapFunc f args xs = zipWithM mapArg xs args >>= f
@@ -160,3 +160,4 @@ binaryFunc f xarg yarg = wrapFunc func [xarg, yarg]
     func [x@(Scalar _ _), y@(Scalar _ _)] = Right $ f x y
     func [_, _] = Left InvalidArg
     func _ = Left ArityMismatch
+-}

@@ -4,14 +4,14 @@
 
 module Tn.Parser
   ( module Tn.Lexer,
-    dimsParser,
+    dimParser,
     scalarParser,
     unitsParser,
   )
 where
 
 import qualified Data.Map.Strict as M
-import Data.Symbol
+import Tn.Symbol
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Expr as Expr
 import Text.Parsec.Token
@@ -19,25 +19,21 @@ import Tn.Dims
 import Tn.Lexer
 import Tn.Scalar
 import Tn.Scope
-import Tn.Units
+import Tn.Unit
 import Prelude hiding (Infix, Prefix, try)
 
-dimsParser :: Parsec String Scope Dims
-dimsParser = buildExpressionParser unitsOpTable (mconcat <$> many1 dimsTerm)
-
-dimsTerm :: Parsec String Scope Dims
-dimsTerm = do
-  scr <- getState
+dimParser :: Parsec String Scope Base
+dimParser = do
+  scope <- getState
   pos <- getPosition
 
-  -- parse the unit symbol and optional exponent
-  d <- identifier lexer <&> intern
-  e <- exponentParser
+  -- parse the dimension symbol
+  s <- identifier lexer
 
   -- ensure the unit is in the state
-  case M.lookup d scr._dims of
-    Nothing -> fail $ "unknown dimensions " ++ show d ++ " at " ++ show pos
-    Just (d', _) -> return $ Dims [(d', e)]
+  case M.lookup (intern s) scope._dims of
+    Just dim -> return dim
+    _ -> fail $ "unknown dimensions " ++ s ++ " at " ++ show pos
 
 unitsParser :: Parsec String Scope Units
 unitsParser = do
@@ -48,22 +44,20 @@ unitsParser = do
 
 unitsTerm :: Parsec String Scope Units
 unitsTerm = do
-  scr <- getState
+  scope <- getState
   pos <- getPosition
 
   -- parse the unit symbol and optional exponent
-  u <- identifier lexer <&> intern
+  s <- identifier lexer
   e <- exponentParser
 
   -- ensure the unit is in the state
-  case M.lookup u scr._units of
-    Nothing -> fail $ "unknown units " ++ show u ++ " at " ++ show pos
-    Just (u', _) -> return $ Units [(u', e)]
+  case M.lookup (intern s) scope._units of
+    Just u -> return $ Dims [(u, e)]
+    _ -> fail $ "unknown units " ++ s ++ " at " ++ show pos
 
 scalarParser :: Parsec String Scope Scalar
 scalarParser = do
   n <- naturalOrFloat lexer
   u <- optionMaybe $ try unitsParser <|> unitsTerm
-  return $ case n of
-    Left i -> Scalar (fromIntegral i) u
-    Right f -> Scalar (toRational f) u
+  return $ Scalar (either fromInteger toRational n) u
