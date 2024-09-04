@@ -22,28 +22,30 @@ unitsConv unitMap gr =
 
 convertUnits :: Scalar -> Units -> OpResultT Scalar
 convertUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
-convertUnits (Scalar x (Just ux)) uy =
-  if not $ ux ~= uy
-    then throwError "disparate units"
-    else do
-      gr <- get <&> _convs
+convertUnits a@(Scalar x (Just ux)) uy
+  | ux == uy = return a
+  | ux ~= uy = do
+    gr <- get <&> _convs
 
-      case unitsConv (unitsToConv ux uy) gr of
-        Just conv -> return $ Scalar (applyConv x conv) (Just uy)
-        _ -> throwError "no conversion"
+    case unitsConv (unitsToConv ux uy) gr of
+      Just conv -> return $ Scalar (applyConv x conv) (Just uy)
+      _ -> throwError "no conversion"
+  | otherwise = throwError "disparate units"
 
 convertSharedUnits :: Scalar -> Units -> OpResultT Scalar
 convertSharedUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
-convertSharedUnits (Scalar x (Just ux)) uy = do
+convertSharedUnits s@(Scalar x (Just ux)) uy = do
   gr <- get <&> _convs
 
   -- determine which units are of the same dimensions
   let m = unitsToConv ux uy
 
   -- combine all the conversions together and apply them
-  case unitsConv m gr of
-    Just conv -> return $ Scalar (applyConv x conv) (Just $ convUnits m ux)
-    _ -> throwError "no conversion"
+  if null m
+    then return s
+    else case unitsConv m gr of
+      Just conv -> return $ Scalar (applyConv x conv) (Just $ convUnits m ux)
+      _ -> throwError "no conversion"
 
 (+%) :: Scalar -> Scalar -> OpResultT Scalar
 (+%) x@(Scalar _ Nothing) y = return $ x + y

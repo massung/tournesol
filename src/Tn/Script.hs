@@ -8,7 +8,7 @@ module Tn.Script
 where
 
 import qualified Data.Map.Strict as M
-import Text.Parsec hiding ((<|>))
+import Text.Parsec
 import Text.Parsec.Token
 import Tn.Conv
 import Tn.Dims
@@ -21,6 +21,7 @@ import Tn.Scope
 import Tn.Symbol
 import Tn.System
 import Tn.Unit
+import Prelude hiding ((<|>))
 
 loadScript :: String -> String -> Scope -> Either ParseError Scope
 loadScript filename source scope = runParser scriptParser scope filename source
