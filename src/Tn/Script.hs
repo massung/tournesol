@@ -100,16 +100,21 @@ unitConv name = do
 
   -- the conversion should not consist of compound units
   (cu, e) <- case toList <$> scalarUnits r of
-    Just [dim] -> return dim
+    Just [units] -> return units
     Nothing -> fail "unit cannot be derived from constant"
     _ -> fail "unit cannot be dervived from compound units"
 
+  -- find the base dimensions of the units
+  _base <- case baseDims [(cu, abs e)] of
+    [(sym, _)] -> return $ Base sym
+    _ -> fail "unit cannot be derived from compound dimensions"
+
   -- define the unit and conversion
-  let u = Unit name $ Derived [(cu, e)]
+  let u = Unit name $ Derived [(cu, abs e)] -- base
       g =
         if e > 0
-          then linearConvs u cu $ toRational r
-          else linearConvs cu u $ toRational r
+          then linearConvs cu u $ toRational r
+          else linearConvs u cu $ toRational r
 
   -- add the unit and conversions to the scope
   either fail (putState . declConvs g) $ declUnit u scope

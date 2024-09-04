@@ -50,12 +50,12 @@ baseUnits = foldDims reduce mempty
     reduce units (Unit _ (Derived units')) n = units <> (baseUnits units' *^ n)
 
 -- returns a map of dimension to base units
-baseUnitDims :: Units -> Map Symbol Unit
+baseUnitDims :: Units -> Map Symbol (Unit, Int)
 baseUnitDims = foldDims reduce mempty
   where
-    reduce :: Map Symbol Unit -> Unit -> Int -> Map Symbol Unit
-    reduce m u@(Unit _ (Base dim)) _ = m <> [(dim, u)]
-    reduce m (Unit _ (Derived units')) _ = m <> baseUnitDims units'
+    reduce :: Map Symbol (Unit, Int) -> Unit -> Int -> Map Symbol (Unit, Int)
+    reduce m u@(Unit _ (Base dim)) e = m <> [(dim, (u, e))]
+    reduce m (Unit _ (Derived units')) e = m <> baseUnitDims (units' *^ e)
 
 -- true if *all* dimensions are the same - units can be perfectly converted
 (~=) :: Units -> Units -> Bool
@@ -81,7 +81,7 @@ unitsToConv from to =
   let from' = baseUnitDims from
       to' = baseUnitDims to
       m = M.intersectionWith (,) from' to'
-   in [(a, b, fromJust $ dimExponent a from) | (a, b) <- M.elems m, a /= b]
+   in [(a, b, e) | ((a, e), (b, _)) <- M.elems m, a /= b]
 
 -- supply units to convert mapping to change from units to converted
 convUnits :: [(Unit, Unit, Int)] -> Units -> Units

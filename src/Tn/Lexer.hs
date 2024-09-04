@@ -24,7 +24,7 @@ lexer = makeTokenParser lang
           opStart = oneOf "^+-*/<>=",
           opLetter = oneOf "^+-*/<>=",
           reservedNames = ["_", "ans", "base", "binary", "const", "dim", "english", "function", "imperial", "si", "unit"],
-          reservedOpNames = ["+", "-", "*", "/", "^", "=", "<", ">", "<=", ">=", "<>"],
+          reservedOpNames = ["+", "-", "*", "/", "^", "=", "==", "<", ">", "<=", ">=", "<>"],
           caseSensitive = True
         }
 

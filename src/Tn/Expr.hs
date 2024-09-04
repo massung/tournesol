@@ -57,7 +57,7 @@ exprTable =
     [binary "^" (^%) AssocLeft],
     [binary "*" (*%) AssocLeft, binary "/" (/%) AssocLeft],
     [binary "+" (+%) AssocLeft, binary "-" (-%) AssocLeft],
-    [binary "=" (==%) AssocLeft, binary "/=" (/=%) AssocLeft, binary "<" (<%) AssocLeft, binary ">" (>%) AssocLeft, binary "<=" (<=%) AssocLeft, binary ">=" (>=%) AssocLeft],
+    [binary "==" (==%) AssocLeft, binary "/=" (/=%) AssocLeft, binary "<" (<%) AssocLeft, binary ">" (>%) AssocLeft, binary "<=" (<=%) AssocLeft, binary ">=" (>=%) AssocLeft],
     [Postfix (do Convert <$> exprConvert)]
   ]
 

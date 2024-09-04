@@ -1,4 +1,4 @@
-# declare a couple dimensions
+# declare a couple known dimensions
 dim length;
 dim time;
 
@@ -18,5 +18,8 @@ unit hr  = 1 / 60 min;
 unit day = 1 / 24 hr;
 
 # derived speed units
-#unit kph = km / hr;
-#unit mph = mi / hr;
+unit kph = km / hr;
+unit mph = mi / hr;
+
+# create acre
+unit acre = 1 / 43560 ft^2

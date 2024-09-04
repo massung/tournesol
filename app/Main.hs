@@ -10,9 +10,9 @@ import System.Console.Haskeline
 import System.Console.Haskeline.IO
 import Text.Parsec (runParser)
 import Tn.Eval
-import Tn.Expr
 import Tn.Scalar
 import Tn.Scope
+import Tn.Script
 
 data Opts = Opts
   { scriptFiles :: [String],
@@ -28,7 +28,7 @@ getOpts :: IO Opts
 getOpts =
   cmdArgs
     $ Opts
-      { scriptFiles = def &= explicit &= name "f" &= name "functions" &= typ "FILE" &= help "Load Tournesol script functions file",
+      { scriptFiles = def &= explicit &= name "f" &= name "file" &= typ "FILE" &= help "Load Tournesol script file",
         precision = def &= explicit &= name "p" &= name "precision" &= typ "DIGITS" &= help "Precision digits to output, defaults to 2",
         sciNotation = def &= explicit &= name "g" &= name "sci-notation" &= help "Output using scientific notation",
         noUnits = def &= explicit &= name "n" &= name "no-units" &= help "Don't output units",
@@ -75,12 +75,12 @@ printAns opts ans@(Scalar _ u) = do
 eval :: String -> Scalar -> Scope -> IO (Either String Scalar)
 eval s ans scope = either (return . Left . show) doIt $ runParser exprParser scope "" s
   where
-    doIt expr = either (return . Left . show) (return . Right) $ evalExpr (ans, scope) expr
+    doIt expr = return $ either (Left . show) Right $ evalExpr (ans, scope) expr
 
 runExpr :: Opts -> Scope -> Scalar -> String -> IO Scalar
 runExpr opts scope ans s =
   eval s ans scope >>= \case
-    Left err -> print err >> return ans
+    Left err -> putStrLn err >> return ans
     Right ans' -> printAns opts ans'
 
 repl :: Opts -> Scope -> Scalar -> InputState -> IO ()
@@ -96,15 +96,25 @@ runInteractive opts scope is = do
   putStrLn motd
   bracketOnError is cancelInput $ repl opts scope 0
 
+loadScripts :: [String] -> IO Scope
+loadScripts = foldM load mempty
+  where
+    load :: Scope -> String -> IO Scope
+    load scope file =
+      loadScriptFile file scope >>= \case
+        Left err -> error $ show err
+        Right scope' -> return scope'
+
 main :: IO ()
 main = do
   opts <- getOpts
 
-  -- TODO: load all the scripts
-  let inputState = initializeInput defaultSettings
-      scope = defaultScope
+  -- load all the script files
+  scope <- case opts.scriptFiles of
+    [] -> return defaultScope
+    files -> loadScripts files
 
   -- run supplied expressions or enter read-eval-print-loop
   case opts.exprStrings of
-    [] -> runInteractive opts scope inputState
+    [] -> runInteractive opts scope $ initializeInput defaultSettings
     exprs -> mapM_ (runExpr opts scope 0) exprs

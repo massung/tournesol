@@ -226,3 +226,21 @@ testScript scope = do
         evalWithScope scope "1 mi == 1760 yd" `shouldBe` Right 1
       it "1 ft == 12 in" $ do
         evalWithScope scope "1 ft == 12 in" `shouldBe` Right 1
+      it "1 km == 1000 m" $ do
+        evalWithScope scope "1 km == 1000 m" `shouldBe` Right 1
+      it "1 day == 86400 s" $ do
+        evalWithScope scope "1 day == 86400 s" `shouldBe` Right 1
+
+    context "Test derived units" $ do
+      it "1 mph == 42240 yd/day" $ do
+        evalWithScope scope "1 mph == 42240 yd/day" `shouldBe` Right 1
+      it "2 kph == 200000 cm/hr" $ do
+        evalWithScope scope "2 kph == 200000 cm/hr" `shouldBe` Right 1
+
+    context "Test unit conversion between derived units" $ do
+      it "10 kph : mph" $ do
+        evalWithScope scope "10 kph : mph" `shouldSatisfy` isRight
+
+    context "Test compound units" $ do
+      it "1 acre : yd^2" $ do
+        evalWithScope scope "1 acre : yd^2" `shouldBe` Right "4840 yd^2"

@@ -203,4 +203,10 @@ declUnit u@(Unit s _) scope =
     else Right scope {_units = M.insert s u scope._units}
 
 declConvs :: ConvGraph -> Scope -> Scope
-declConvs g scope = scope {_convs = G.overlay scope._convs g}
+declConvs g scope =
+  scope
+    { _convs = G.overlay scope._convs g,
+      _units = M.union scope._units $ fromList units'
+    }
+  where
+    units' = [(s, u) | u@(Unit s _) <- G.vertexList g]
