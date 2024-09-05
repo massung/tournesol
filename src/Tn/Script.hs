@@ -1,5 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Tn.Script
   ( loadScript,
@@ -12,6 +15,7 @@ import qualified Data.Map.Strict as M
 import Text.Parsec
 import Text.Parsec.Token
 import Tn.Conv
+import Tn.Dims
 import Tn.Eval
 import Tn.Parser
 import Tn.Scalar
@@ -37,7 +41,7 @@ scriptParser = do
   getState
 
 scriptDecl :: Parsec String Scope ()
-scriptDecl = dimDecl <|> unitDecl
+scriptDecl = dimDecl <|> unitDecl <|> systemUnits
 
 -- dim [base] <name>
 dimDecl :: Parsec String Scope ()
@@ -67,20 +71,12 @@ unitBase :: Symbol -> Parsec String Scope ()
 unitBase name = do
   reserved lexer "base"
 
-  -- optional system and registered dimension
-  system <- optionMaybe systemName
+  -- dimension
   base <- baseDim
   scope <- getState
 
-  -- build the graph for the unit
-  let u = Unit name base
-      g = case system of
-        Just Metric -> siConvs u
-        Just Binary -> binaryConvs u
-        _ -> G.vertex u
-
   -- add the unit and conversions to the scope
-  either fail (putState . declConvs g) $ declUnit u scope
+  either fail putState $ declUnit (Unit name base) scope
 
 unitAlias :: Symbol -> Parsec String Scope ()
 unitAlias name = do
@@ -96,35 +92,22 @@ unitConv name = do
   scope <- getState
 
   -- evaluate the expression
-  r <- either fail return $ evalExpr (0, scope) expr
+  x <- either fail return $ evalExpr (0, scope) expr
 
-  -- the conversion should not consist of compound units
-  (cu, e) <- case toList <$> scalarUnits r of
-    Just [units] -> return units
-    Nothing -> fail "unit cannot be derived from constant"
-    _ -> fail "unit cannot be dervived from compound units"
+  -- extract the linear ratio, units, and exponent
+  (r, (to, e)) <- case x of
+    Scalar r (Just [(to, e)]) -> return (r, (to, e))
+    _ -> fail "invalid conversion"
 
-  -- find the base dimensions of the units
-  _base <- case baseDims [(cu, abs e)] of
-    [(sym, _)] -> return $ Base sym
-    _ -> fail "unit cannot be derived from compound dimensions"
-
-  -- define the unit and conversion
-  let u = Unit name $ Derived [(cu, abs e)] -- base
+  -- create the unit and conversion graph
+  let u = Unit name $ Derived [(to, abs e)]
       g =
         if e > 0
-          then linearConvs cu u $ toRational r
-          else linearConvs u cu $ toRational r
+          then linearConvs u (to, 1 % toInteger e) $ recip r
+          else linearConvs u (to, toInteger e % 1) r
 
   -- add the unit and conversions to the scope
   either fail (putState . declConvs g) $ declUnit u scope
-
-systemName :: Parsec String Scope System
-systemName = do
-  (reserved lexer "imperial" >> return Imperial)
-    <|> (reserved lexer "english" >> return Imperial)
-    <|> (reserved lexer "si" >> return Metric)
-    <|> (reserved lexer "binary" >> return Binary)
 
 baseDim :: Parsec String Scope Base
 baseDim = do
@@ -133,3 +116,28 @@ baseDim = do
 
   -- ensure the dimension is registered
   maybe (fail "unknown dimension") return base
+
+systemUnits :: Parsec String Scope ()
+systemUnits = do
+  system <- systemName
+  name <- identifier lexer <&> intern
+  scope <- getState
+
+  -- lookup the unit in the scope
+  u <- maybe (fail "unknown unit") return $ M.lookup name scope._units
+
+  -- create the conversion graph
+  let g = case system of
+        Metric -> siConvs u
+        Binary -> binaryConvs u
+        _ -> G.vertex u
+
+  -- register the graph
+  putState $ declConvs g scope
+
+systemName :: Parsec String Scope System
+systemName = do
+  (reserved lexer "imperial" >> return Imperial)
+    <|> (reserved lexer "english" >> return Imperial)
+    <|> (reserved lexer "si" >> return Metric)
+    <|> (reserved lexer "binary" >> return Binary)

@@ -22,13 +22,13 @@ _mass :: Base
 _mass = Base "mass"
 
 _storage :: Base
-_storage =  Base "storage"
+_storage = Base "storage"
 
 _temperature :: Base
-_temperature = Base  "temperature"
+_temperature = Base "temperature"
 
 _time :: Base
-_time = Base  "time"
+_time = Base "time"
 
 --
 -- derived units
@@ -44,7 +44,7 @@ _charge :: Base
 _charge = Derived [(_A, 1), (_s, 1)]
 
 _energy :: Base
-_energy = Derived [(_kg, 1),(_m, 2), (_s, -2)]
+_energy = Derived [(_kg, 1), (_m, 2), (_s, -2)]
 
 _force :: Base
 _force = Derived [(_kg, 1), (_m, 1), (_s, -2)]
@@ -71,7 +71,7 @@ _voltage :: Base
 _voltage = Derived [(_kg, 1), (_m, 2), (_s, -3), (_A, -1)]
 
 _volume :: Base
-_volume = Derived [(_m, 3)]
+_volume = Derived [(_cm, 3)]
 
 --
 -- angle units
@@ -180,6 +180,9 @@ _hz = Unit "hz" _frequency
 _m :: Unit
 _m = Unit "m" _length
 
+_cm :: Unit
+_cm = Unit "cm" _length
+
 _mil :: Unit
 _mil = Unit "mil" _length
 
@@ -258,7 +261,7 @@ _cwt :: Unit
 _cwt = Unit "cwt" _mass
 
 _t :: Unit
-_t = Unit  "t" _mass
+_t = Unit "t" _mass
 
 --
 -- power units
@@ -315,21 +318,24 @@ _Tc = Unit "Tc" _temperature
 
 _Tf :: Unit
 _Tf = Unit "Tf" _temperature
-  -- where
-  --   cToF x = x * (9 % 5) + 32
-  --   fToC x = (x - 32) * (5 % 9)
+
+-- where
+--   cToF x = x * (9 % 5) + 32
+--   fToC x = (x - 32) * (5 % 9)
 
 _Tk :: Unit
 _Tk = Unit "Tk" _temperature
-  -- where
-  --   cToK x = x + 273.15
-  --   kToC x = x - 273.15
+
+-- where
+--   cToK x = x + 273.15
+--   kToC x = x - 273.15
 
 _Tr :: Unit
 _Tr = Unit "Tr" _temperature
-  -- where
-  --   cToR x = x * (9 % 5) + 491.67
-  --   rToC x = (x - 491.67) * (5 % 9)
+
+-- where
+--   cToR x = x * (9 % 5) + 491.67
+--   rToC x = (x - 491.67) * (5 % 9)
 
 --
 -- volume units

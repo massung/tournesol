@@ -35,12 +35,6 @@ testScope =
 runWithTestScope :: OpResultT Scalar -> Either String Scalar
 runWithTestScope = runWithScope testScope
 
-evalWithScope :: Scope -> String -> Either String Scalar
-evalWithScope scope s =
-  case runParser exprParser scope "" s of
-    Left err -> Left $ show err
-    Right expr -> evalExpr (0, scope) expr
-
 evalWithTestScope :: String -> Either String Scalar
 evalWithTestScope = evalWithScope testScope
 
@@ -59,10 +53,12 @@ testUnits = do
       baseDims [(_L, 2)] `shouldBe` Dims [("length", 6)]
 
   describe "Base units" $ do
+    let _cm = Unit "cm" _length
+
     it "_J == [(_kg, 1), (_m, 2), (_s, -2)]" $ do
       baseUnits [(_J, 1)] `shouldBe` Dims [(_kg, 1), (_m, 2), (_s, -2)]
-    it "_L^2 == [(_m, 6)]" $ do
-      baseUnits [(_L, 2)] `shouldBe` Dims [(_m, 6)]
+    it "_L^2 == [(_cm, 6)]" $ do
+      baseUnits [(_L, 2)] `shouldBe` Dims [(_cm, 6)]
 
   describe "Base conversions" $ do
     it "_ft -> _m" $ do
@@ -90,13 +86,13 @@ testConvs = do
 
   describe "Simple conversions" $ do
     it "_m to _cm == 100" $ do
-      fmap (applyConv 1) (findConv _m _cm gr) `shouldBe` Just 100
+      fmap (applyConv 1) (findConv (_m, 1) _cm gr) `shouldBe` Just 100
     it "_km to _m == 1000" $ do
-      fmap (applyConv 1) (findConv _km _m gr) `shouldBe` Just 1000
+      fmap (applyConv 1) (findConv (_km, 1) _m gr) `shouldBe` Just 1000
 
   describe "Path conversions" $ do
     it "_km to _cm == 100,000" $ do
-      fmap (applyConv 1) (findConv _km _cm gr) `shouldBe` Just 100_000
+      fmap (applyConv 1) (findConv (_km, 1) _cm gr) `shouldBe` Just 100_000
 
 testParsing :: SpecWith ()
 testParsing = do

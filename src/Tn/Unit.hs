@@ -39,23 +39,33 @@ baseDims = foldDims reduce mempty
   where
     reduce :: Dims Symbol -> Unit -> Int -> Dims Symbol
     reduce dims (Unit _ (Base sym)) n = dims <> [(sym, n)]
-    reduce dims (Unit _ (Derived units')) n = dims <> (baseDims units' *^ n)
+    reduce dims (Unit _ (Derived units)) n = dims <> (baseDims units *^ n)
 
 -- returns the most fundamental units; eg, N^2 -> kg^2 m^2 / s^4
 baseUnits :: Units -> Units
 baseUnits = foldDims reduce mempty
   where
     reduce :: Units -> Unit -> Int -> Units
-    reduce units u@(Unit _ (Base _)) n = units <> [(u, n)]
-    reduce units (Unit _ (Derived units')) n = units <> (baseUnits units' *^ n)
+    reduce units (Unit _ (Derived u')) n = units <> (baseUnits u' *^ n)
+    reduce units u n = units <> [(u, n)]
 
 -- returns a map of dimension to base units
+-- baseUnitDims :: Units -> Map Symbol (Unit, Int)
+-- baseUnitDims = foldDims reduce mempty
+--   where
+--     reduce :: Map Symbol (Unit, Int) -> Unit -> Int -> Map Symbol (Unit, Int)
+--     reduce m u@(Unit _ (Base dim)) e = m <> [(dim, (u, e))]
+--     reduce m (Unit _ (Derived units)) e = m <> baseUnitDims (units *^ e)
+
 baseUnitDims :: Units -> Map Symbol (Unit, Int)
 baseUnitDims = foldDims reduce mempty
   where
     reduce :: Map Symbol (Unit, Int) -> Unit -> Int -> Map Symbol (Unit, Int)
     reduce m u@(Unit _ (Base dim)) e = m <> [(dim, (u, e))]
-    reduce m (Unit _ (Derived units')) e = m <> baseUnitDims (units' *^ e)
+    reduce m u@(Unit _ (Derived units)) e =
+      case baseUnitDims $ units *^ e of
+        [(dim, _)] -> m <> [(dim, (u, e))]
+        dims -> m <> dims
 
 -- true if *all* dimensions are the same - units can be perfectly converted
 (~=) :: Units -> Units -> Bool

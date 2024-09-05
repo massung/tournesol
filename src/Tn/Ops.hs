@@ -16,7 +16,7 @@ runWithScope scope op = evalState (runExceptT op) scope
 
 unitsConv :: [(Unit, Unit, Int)] -> ConvGraph -> Maybe Conv
 unitsConv unitMap gr =
-  case [findConv f u gr <&> (^.^ e) | (f, u, e) <- unitMap] of
+  case [findConv (f, e) u gr | (f, u, e) <- unitMap] of
     [] -> Nothing
     c : cs -> foldl' (<>) c cs
 
@@ -25,11 +25,11 @@ convertUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
 convertUnits a@(Scalar x (Just ux)) uy
   | ux == uy = return a
   | ux ~= uy = do
-    gr <- get <&> _convs
+      gr <- get <&> _convs
 
-    case unitsConv (unitsToConv ux uy) gr of
-      Just conv -> return $ Scalar (applyConv x conv) (Just uy)
-      _ -> throwError "no conversion"
+      case unitsConv (unitsToConv ux uy) gr of
+        Just conv -> return $ Scalar (applyConv x conv) (Just uy)
+        _ -> throwError "no conversion"
   | otherwise = throwError "disparate units"
 
 convertSharedUnits :: Scalar -> Units -> OpResultT Scalar

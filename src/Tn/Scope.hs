@@ -95,17 +95,21 @@ metricConvs =
       -- pressure units
       siConvs _Pa,
       -- volume units
-      siConvs _L
+      siConvs _L,
+      --
+      linearConvs _L (_cm, 1 % 3) $ 1 % 1000
     ]
 
 imperialConvs :: ConvGraph
 imperialConvs =
   G.overlays
     [ -- length units (imperial)
-      linearConvs _ft _m $ 1250 % 381,
-      linearConvs _ft _in $ 1 % 12,
-      linearConvs _ft _yd $ 3 % 1,
-      linearConvs _ft _mi $ 5280 % 1
+      linearConvs _ft (_m, 1) $ 1250 % 381,
+      linearConvs _ft (_in, 1) $ 1 % 12,
+      linearConvs _ft (_yd, 1) $ 3 % 1,
+      linearConvs _ft (_mi, 1) $ 5280 % 1,
+      -- area units (imperial)
+      linearConvs _acre (_ft, 1 % 2) $ 1 % 43560
     ]
 
 -- [ -- area units (imperial)
@@ -129,26 +133,26 @@ imperialConvs =
 angleConvs :: ConvGraph
 angleConvs =
   G.overlays
-    [ linearConvs _rad _deg $ toRational (pi / 180.0 :: Double),
-      linearConvs _grad _deg $ 400 % 360,
-      linearConvs _rev _deg $ 1 % 360,
-      linearConvs _turn _deg $ 1 % 360
+    [ linearConvs _rad (_deg, 1) $ toRational (pi / 180.0 :: Double),
+      linearConvs _grad (_deg, 1) $ 400 % 360,
+      linearConvs _rev (_deg, 1) $ 1 % 360,
+      linearConvs _turn (_deg, 1) $ 1 % 360
     ]
 
 astronomicalConvs :: ConvGraph
 astronomicalConvs =
   G.overlays
-    [ linearConvs _m _au $ 1 % 149597870700,
-      linearConvs _m _ly $ 1 % 94607304725808000,
-      linearConvs _au _pc $ 1 % 206265
+    [ linearConvs _m (_au, 1) $ 1 % 149597870700,
+      linearConvs _m (_ly, 1) $ 1 % 94607304725808000,
+      linearConvs _au (_pc, 1) $ 1 % 206265
     ]
 
 durationConvs :: ConvGraph
 durationConvs =
   G.overlays
-    [ linearConvs _s _min $ 60 % 1,
-      linearConvs _min _hr $ 60 % 1,
-      linearConvs _hr _day $ 24 % 1
+    [ linearConvs _s (_min, 1) $ 60 % 1,
+      linearConvs _min (_hr, 1) $ 60 % 1,
+      linearConvs _hr (_day, 1) $ 24 % 1
     ]
 
 -- speedUnits :: [[Unit]]
@@ -160,7 +164,7 @@ diskConvs =
     [ binaryConvs _B,
       binaryConvs _b,
       -- conversion from bit -> byte
-      linearConvs _b _B $ 8 % 1
+      linearConvs _b (_B, 1) $ 8 % 1
     ]
 
 -- temperatureUnits :: [[Unit]]

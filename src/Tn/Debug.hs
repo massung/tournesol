@@ -13,6 +13,8 @@ module Tn.Debug
     module Tn.Scope,
     module Tn.Script,
     module Tn.Unit,
+    evalWithScope,
+    evalWithDefaultScope,
   )
 where
 
@@ -28,6 +30,15 @@ import Tn.Scalar
 import Tn.Scope
 import Tn.Script
 import Tn.Unit
+
+evalWithScope :: Scope -> String -> Either String Scalar
+evalWithScope scope s =
+  case runParser exprParser scope "" s of
+    Left err -> Left $ show err
+    Right expr -> evalExpr (0, scope) expr
+
+evalWithDefaultScope :: String -> Either String Scalar
+evalWithDefaultScope = evalWithScope defaultScope
 
 instance IsString Scalar where
   fromString s = case runParser scalarParser defaultScope "" s of
