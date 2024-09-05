@@ -27,9 +27,13 @@ convertUnits a@(Scalar x (Just ux)) uy
   | ux ~= uy = do
       gr <- get <&> _convs
 
-      case unitsConv (unitsToConv ux uy) gr of
-        Just conv -> return $ Scalar (applyConv x conv) (Just uy)
-        _ -> throwError "no conversion"
+      -- if there's no conversions needed then the base units match (e.g., W s : J)
+      let convMap = unitsToConv ux uy
+      if null convMap
+        then return $ Scalar x (Just uy)
+        else case unitsConv convMap gr of
+          Just conv -> return $ Scalar (applyConv x conv) (Just uy)
+          _ -> throwError "no conversion"
   | otherwise = throwError "disparate units"
 
 convertSharedUnits :: Scalar -> Units -> OpResultT Scalar

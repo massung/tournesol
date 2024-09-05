@@ -142,9 +142,9 @@ angleConvs =
 astronomicalConvs :: ConvGraph
 astronomicalConvs =
   G.overlays
-    [ linearConvs _m (_au, 1) $ 1 % 149597870700,
-      linearConvs _m (_ly, 1) $ 1 % 94607304725808000,
-      linearConvs _au (_pc, 1) $ 1 % 206265
+    [ linearConvs _m (_au, 1) $ 149597870700 % 1,
+      linearConvs _m (_ly, 1) $ 94607304725808000 % 1,
+      linearConvs _au (_pc, 1) $ 206265 % 1
     ]
 
 durationConvs :: ConvGraph
