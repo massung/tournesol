@@ -11,7 +11,6 @@ module Tn.Parser
 where
 
 import qualified Data.Map.Strict as M
-import Tn.Symbol
 import Text.Parsec hiding ((<|>))
 import Text.Parsec.Expr as Expr
 import Text.Parsec.Token
@@ -19,6 +18,7 @@ import Tn.Dims
 import Tn.Lexer
 import Tn.Scalar
 import Tn.Scope
+import Tn.Symbol
 import Tn.Unit
 import Prelude hiding (Infix, Prefix, try)
 
@@ -45,7 +45,6 @@ unitsParser = do
 unitsTerm :: Parsec String Scope Units
 unitsTerm = do
   scope <- getState
-  pos <- getPosition
 
   -- parse the unit symbol and optional exponent
   s <- identifier lexer
@@ -54,7 +53,7 @@ unitsTerm = do
   -- ensure the unit is in the state
   case M.lookup (intern s) scope._units of
     Just u -> return $ Dims [(u, e)]
-    _ -> fail $ "unknown units " ++ s ++ " at " ++ show pos
+    _ -> fail $ "unknown units: " ++ s
 
 scalarParser :: Parsec String Scope Scalar
 scalarParser = do

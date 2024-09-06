@@ -63,11 +63,13 @@ binaryConvs = derivedConvs binaryPrefixes
 mkConvGraph :: [ConvGraph] -> ConvGraph
 mkConvGraph = overlays
 
--- search the graph for a valid conversion
+-- search the graph and folds the conversion path into a single conversion
 findConv :: (Unit, Int) -> Unit -> ConvGraph -> Maybe Conv
-findConv (from, n) to gr = fmap (foldl1' (<>)) path
-  where
-    path = bfs [[Conv (from, toRational n) id]] (S.singleton from) to gr
+findConv from to gr = foldl1' (<>) <$> findConvPath from to gr
+
+-- searches the graph and returns a path of conversions
+findConvPath :: (Unit, Int) -> Unit -> ConvGraph -> Maybe [Conv]
+findConvPath (from, n) = bfs [[Conv (from, toRational n) id]] (S.singleton from)
 
 -- breadth first path search
 bfs :: [[Conv]] -> Set Unit -> Unit -> ConvGraph -> Maybe [Conv]
@@ -100,6 +102,6 @@ bfs q s to gr = find ((== to) . fst . goal) q <|> bfs q' s' to gr
 
     -- exponentiate the conversion function
     r' (Conv (u, e) r) n =
-      let i = numerator n `div` numerator e
+      let i = abs $ numerator n `div` numerator e
           f = foldl' (.) r $ replicate (fromInteger $ i - 1) r
-       in Conv (u, n / e) $ if n >= 0 then f else (/ f 1)
+       in Conv (u, n / e) $ if n * e >= 0 then f else (/ f 1)

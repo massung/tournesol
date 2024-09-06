@@ -1,0 +1,6 @@
+
+# length units
+unit nmi "nautical miles" = 1852 m;
+
+# speed units
+unit kn "knots" = nmi / hr;

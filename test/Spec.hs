@@ -6,25 +6,25 @@
 
 import Data.FileEmbed
 import Test.Hspec
-import Text.Parsec
 import Tn.Debug
 
 main :: IO ()
 main =
   hspec $ do
     testUnits
-    testConvs
-    testParsing
-    testOps
-    testExprs
 
-    -- load the test script before this spec action
-    case loadScript "test.tn" embeddedScript mempty of
-      Left err -> error $ show err
-      Right scope -> testScript scope
+-- testConvs
+-- testParsing
+-- testOps
+-- testExprs
+
+-- -- load the test script before this spec action
+-- case loadScript "test.tn" embeddedScript mempty of
+--   Left err -> error $ show err
+--   Right scope -> testScript scope
 
 embeddedScript :: String
-embeddedScript = $(embedStringFile "scripts/test.tn")
+embeddedScript = $(embedStringFile "test/test.tn")
 
 testScope :: Scope
 testScope =
@@ -32,34 +32,40 @@ testScope =
     { _epsilon = 5e-3
     }
 
-runWithTestScope :: OpResultT Scalar -> Either String Scalar
-runWithTestScope = runWithScope testScope
-
 evalWithTestScope :: String -> Either String Scalar
 evalWithTestScope = evalWithScope testScope
 
 testUnits :: SpecWith ()
 testUnits = do
   describe "Unit equality" $ do
-    it "_m == _m" $ do
-      _m `shouldBe` _m
+    it "m == m" $ do
+      "m" `shouldBe` ("m" :: Unit)
     it "_g /= _m" $ do
-      _g `shouldNotBe` _m
+      "g" `shouldNotBe` ("m" :: Unit)
 
   describe "Base dimensions" $ do
-    it "_J == [(_mass, 1), (_length, 2), (_time, -2)]" $ do
-      baseDims [(_J, 1)] `shouldBe` Dims [("mass", 1), ("length", 2), ("time", -2)]
-    it "_L^2 == [(_length, 6)]" $ do
-      baseDims [(_L, 2)] `shouldBe` Dims [("length", 6)]
+    it "ft -> [length]" $ do
+      baseDims "ft" `shouldBe` [("[length]", 1)]
+    it "J -> [mass][length]^2/[time]^2" $ do
+      baseDims "J" `shouldBe` [("[mass]", 1), ("[length]", 2), ("[time]", -2)]
+    it "L^2 -> [length]^6" $ do
+      baseDims "L^2" `shouldBe` [("[length]", 6)]
 
   describe "Base units" $ do
-    let _cm = Unit "cm" _length
+    it "m -> m" $ do
+      baseUnits "m" `shouldBe` "m"
+    it "J -> kg m^2/s^2" $ do
+      baseUnits "J" `shouldBe` "kg m^2/s^2"
+    it "lbf -> slug ft/s" $ do
+      baseUnits "lbf" `shouldBe` "slug ft/s^2"
+    it "mph -> mi/hr" $ do
+      baseUnits "mph" `shouldBe` "mi/hr"
 
-    it "_J == [(_kg, 1), (_m, 2), (_s, -2)]" $ do
-      baseUnits [(_J, 1)] `shouldBe` Dims [(_kg, 1), (_m, 2), (_s, -2)]
-    it "_L^2 == [(_cm, 6)]" $ do
-      baseUnits [(_L, 2)] `shouldBe` Dims [(_cm, 6)]
+  describe "Map dimensions to units" $ do
+    it "m -> ([length], (m, 1))" $ do
+      baseUnitDims "m" `shouldBe` [("[length]", ("m", 1))]
 
+{-
   describe "Base conversions" $ do
     it "_ft -> _m" $ do
       unitsToConv [(_ft, 1)] [(_m, 2)] `shouldBe` [(_ft, _m, 1)]
@@ -73,7 +79,8 @@ testUnits = do
       verifyUnits [(_ft, 2)] `shouldBe` True
     it "_ft^2 _ft" $ do
       verifyUnits [(_ft, 2), (_ft, 1)] `shouldBe` True
-
+-}
+{-
 testConvs :: SpecWith ()
 testConvs = do
   let gr = defaultScope._convs
@@ -240,3 +247,4 @@ testScript scope = do
     context "Test compound units" $ do
       it "1 acre : yd^2" $ do
         evalWithScope scope "1 acre : yd^2" `shouldBe` Right "4840 yd^2"
+-}

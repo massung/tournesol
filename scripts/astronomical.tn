@@ -1,0 +1,4 @@
+# astronomical distances
+unit au "astronomical units" = 149597870700 m;
+unit ly "light years" = 94607304725808000 m;
+unit pc "parsecs" = 206265 au;

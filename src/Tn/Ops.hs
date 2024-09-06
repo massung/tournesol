@@ -8,33 +8,32 @@ import Tn.Unit
 
 type OpResultT = ExceptT String (State Scope)
 
-runWithDefaultScope :: OpResultT Scalar -> Either String Scalar
-runWithDefaultScope = runWithScope defaultScope
-
 runWithScope :: Scope -> OpResultT Scalar -> Either String Scalar
 runWithScope scope op = evalState (runExceptT op) scope
 
 unitsConv :: [(Unit, Unit, Int)] -> ConvGraph -> Maybe Conv
 unitsConv unitMap gr =
-  case [findConv (f, e) u gr | (f, u, e) <- unitMap] of
-    [] -> Nothing
-    c : cs -> foldl' (<>) c cs
+  case sequence [findConv (from, e) to gr | (from, to, e) <- unitMap] of
+    Just (c : cs) -> Just $ foldl' (<>) c cs
+    _ -> Nothing
 
 convertUnits :: Scalar -> Units -> OpResultT Scalar
 convertUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
-convertUnits a@(Scalar x (Just ux)) uy
-  | ux == uy = return a
-  | ux ~= uy = do
+convertUnits (Scalar x (Just ux)) uy =
+  if ux ~= uy
+    then performConvertion
+    else throwError "disparate units"
+  where
+    convMap = unitsToConv ux uy
+    performConvertion = do
       gr <- get <&> _convs
 
-      -- if there's no conversions needed then the base units match (e.g., W s : J)
-      let convMap = unitsToConv ux uy
+      -- no conversions needed then the base units match (eg, W s == J)
       if null convMap
         then return $ Scalar x (Just uy)
         else case unitsConv convMap gr of
           Just conv -> return $ Scalar (applyConv x conv) (Just uy)
           _ -> throwError "no conversion"
-  | otherwise = throwError "disparate units"
 
 convertSharedUnits :: Scalar -> Units -> OpResultT Scalar
 convertSharedUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)

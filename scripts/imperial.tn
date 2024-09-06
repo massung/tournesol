@@ -1,0 +1,46 @@
+# length units
+unit ft "feet" = 1250 / 381 m;
+unit in "inches" = 12 / 1 ft;
+unit h "hands" = 4 in;
+unit yd "yards" = 3 ft;
+unit ch "chains" = 22 yd;
+unit mi "miles" = 5280 ft;
+unit lea "leagues" = 3 mi;
+unit link "links" = 1 / 100 ch;
+unit rod "rods" = 25 link;
+
+# area units
+unit acre "acres" = 43560 ft^2;
+
+# volume units
+unit pt "pints" = 568.26125 mL;
+unit floz "floor ounces" = 20 / 1 pt;
+unit cu "cups" = 2 / 1 pt;
+unit qt "quarts" = 2 pt;
+unit gal "gallons" = 4 qt;
+
+# mass units
+unit lb "pounds" = 0.45359237 kg;
+unit slug "slugs" = 32.174049 lb;
+unit oz "ounces" = 16 / 1 lb;
+unit st "stones" = 14 lb;
+unit qtr "quarter stones" = 28 lb;
+unit cwt "hundred weights" = 112 lb;
+unit ton "tons" = 2240 lb;
+
+# force units
+unit lbf "pounds of force" = slug ft / s^2;
+unit kip "kips" = 1000 lbf;
+
+# power units
+#unit hp "horsepower" = 550 lbf ft / s;
+unit BTU "british thermal units (IT)" = 1055.06 J;
+unit thrm "therms" = 100000 BTU;
+
+# pressure units
+#unit psi "pounds of force per square inch" = lbf / in^2;
+unit bar "bars" = 100 kPa;
+unit atm "atmospheres" = 101325 Pa;
+
+# speed units
+unit mph = mi / hr;

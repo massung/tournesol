@@ -32,7 +32,7 @@ instance (Show a) => Show (Dims a) where
           | null den -> show' num
           | otherwise -> show' num ++ "/" ++ show' (M.map abs den)
     where
-      show' dims = unwords [showExp u | u <- M.toList dims]
+      show' dims = unwords [showExp u | u <- sortWith snd $ M.toList dims]
 
       -- show a single dimension with optional exponent
       showExp (u, 1) = show u

@@ -1,0 +1,9 @@
+dim storage;
+
+# base and derived units
+unit B "bytes" = base storage;
+unit b "bits" = 8 B;
+
+# create binary unit conversions
+binary B;
+binary b;
