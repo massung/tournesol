@@ -8,13 +8,8 @@ module Main (main) where
 import System.Console.CmdArgs
 import System.Console.Haskeline
 import System.Console.Haskeline.IO
-import Text.Parsec (runParser)
 import Tn.Builtins
 import Tn.Debug
-import Tn.Eval
-import Tn.Scalar
-import Tn.Scope
-import Tn.Script
 
 data Opts = Opts
   { scriptFiles :: [String],

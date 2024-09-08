@@ -24,8 +24,8 @@ instance Exception ContextError
 --
 type ResultT = ExceptT ContextError (State Context)
 
-mkContext :: ConvGraph -> Context
-mkContext gr = Context gr [V.singleton 0]
+mkContext :: ConvGraph -> Scalar -> Context
+mkContext gr ans = Context gr [V.singleton ans]
 
 runWithContext :: ResultT Scalar -> Context -> Either ContextError Scalar
 runWithContext it = evalState (runExceptT it)

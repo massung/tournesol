@@ -42,7 +42,7 @@ import Tn.Unit
 
 evalWithScope :: String -> Scalar -> Scope -> Either String Scalar
 evalWithScope s ans scope =
-  let ctx = Context scope._convs [V.singleton ans]
+  let ctx = mkContext scope._convs ans
    in case runParser exprParser scope "" s of
         Left err -> Left $ show err
         Right expr -> mapLeft show $ runWithContext (evalExpr expr) ctx

@@ -106,7 +106,7 @@ unitConv name = do
 
   -- evaluate the expression
   x <-
-    let ctx = mkContext scope._convs
+    let ctx = mkContext scope._convs 0
      in either (fail . show) return $ runWithContext (evalExpr expr) ctx
 
   -- extract the linear ratio, units, and exponent

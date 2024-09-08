@@ -55,7 +55,7 @@ defaultScope =
       ]
 
 defaultContext :: Context
-defaultContext = mkContext defaultScope._convs
+defaultContext = mkContext defaultScope._convs 0
 
 _if :: ResultT Scalar
 _if =
