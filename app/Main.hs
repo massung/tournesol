@@ -10,6 +10,7 @@ import System.Console.Haskeline
 import System.Console.Haskeline.IO
 import Text.Parsec (runParser)
 import Tn.Builtins
+import Tn.Debug
 import Tn.Eval
 import Tn.Scalar
 import Tn.Scope
@@ -73,14 +74,9 @@ printAns opts ans@(Scalar _ u) = do
     else printf (printFormat opts ans ++ "\n") ans
   return ans
 
-eval :: String -> Scalar -> Scope -> IO (Either String Scalar)
-eval s ans scope = either (return . Left . show) doIt $ runParser exprParser scope "" s
-  where
-    doIt expr = return $ evalExpr (ans, scope) expr
-
 runExpr :: Opts -> Scope -> Scalar -> String -> IO Scalar
 runExpr opts scope ans s =
-  eval s ans scope >>= \case
+  case evalWithScope s ans scope of
     Left err -> putStrLn err >> return ans
     Right ans' -> printAns opts ans'
 

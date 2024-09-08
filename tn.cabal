@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Tn.Builtins
+      Tn.Context
       Tn.Conv
       Tn.Debug
       Tn.Dims

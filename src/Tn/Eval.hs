@@ -1,61 +1,49 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+
 module Tn.Eval
   ( module Tn.Expr,
     evalExpr,
   )
 where
 
+import Tn.Context
+import Tn.Conv
 import Tn.Expr
 import Tn.Function
 import Tn.Ops
 import Tn.Scalar
-import Tn.Scope
 import Tn.Unit
+import Prelude hiding (Any)
 
-type EvalResultT = ExceptT String (State (Scalar, Scope))
+evalExpr :: Expr -> ResultT Scalar
+evalExpr Ans = getLocal 0
+evalExpr (Term x) = return x
+evalExpr (Convert to x) = evalConvert x to
+evalExpr (UnaryOp f x) = evalUnaryOp f x
+evalExpr (BinaryOp f x y) = evalBinaryOp f x y
+evalExpr (Apply f xs) = evalApply f xs
 
-evalExpr :: (Scalar, Scope) -> Expr -> Either String Scalar
-evalExpr st expr = evalState (runExceptT $ evalExprTerm expr) st
+evalConvert :: Expr -> Units -> ResultT Scalar
+evalConvert x units = do
+  x' <- evalExpr x
+  convertUnits x' units
 
-evalExprTerm :: Expr -> EvalResultT Scalar
-evalExprTerm Ans = get <&> fst
-evalExprTerm (Term x) = return x
-evalExprTerm (Convert to x) = evalConvert x to
-evalExprTerm (UnaryOp f x) = evalUnaryOp f x
-evalExprTerm (BinaryOp f x y) = evalBinaryOp f x y
+evalUnaryOp :: (Scalar -> ResultT Scalar) -> Expr -> ResultT Scalar
+evalUnaryOp f x = evalExpr x >>= f
 
--- evalExprTerm (Apply f xs) = evalApply f xs
-
-evalConvert :: Expr -> Units -> EvalResultT Scalar
-evalConvert term units = do
-  x <- evalExprTerm term
-  scope <- get <&> snd
-
-  -- attempt to convert
-  let ans = runWithScope scope $ convertUnits x units
-   in either throwError return ans
-
-evalUnaryOp :: (Scalar -> OpResultT Scalar) -> Expr -> EvalResultT Scalar
-evalUnaryOp f term = do
-  x <- evalExprTerm term
-  scope <- get <&> snd
-
-  -- attempt the operation
-  let ans = runWithScope scope $ f x
-   in either throwError return ans
-
-evalBinaryOp :: (Scalar -> Scalar -> OpResultT Scalar) -> Expr -> Expr -> EvalResultT Scalar
+evalBinaryOp :: (Scalar -> Scalar -> ResultT Scalar) -> Expr -> Expr -> ResultT Scalar
 evalBinaryOp f x y = do
-  x' <- evalExprTerm x
-  y' <- evalExprTerm y
+  x' <- evalExpr x
+  y' <- evalExpr y
+  f x' y'
 
-  -- get the conversion scope
-  scope <- get <&> snd
+evalApply :: Function -> [Expr] -> ResultT Scalar
+evalApply f xs = do
+  xs' <- sequence [evalExpr x | x <- xs]
+  args <- mapArgs xs' f._args
 
-  -- attempt the operation
-  let ans = runWithScope scope $ f x' y'
-   in either throwError return ans
+  -- push the arguments onto a new context and evaluate
+  ans <- get <&> runWithContext f._body . push args
 
--- evalApply :: Function -> [Expr] -> EvalResultT Scope
--- evalApply f xs = do
---   xs' <- sequence [evalExprTerm x | x <- xs]
---   either throwError return $ f xs'
+  -- return the answer in the current context
+  either throwError return ans

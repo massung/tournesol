@@ -1,14 +1,20 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Tn.Builtins where
 
 import Data.FileEmbed
-import Text.Parsec
-import Text.Printf
+import Tn.Context
+import Tn.Function
+import Tn.Ops
+import Tn.Scalar
 import Tn.Scope
 import Tn.Script
+import Tn.Symbol
+import Prelude hiding (Any)
 
 defaultScript :: String
 defaultScript = $(embedStringFile "scripts/default.tn")
@@ -24,6 +30,11 @@ maritimeScript = $(embedStringFile "scripts/maritime.tn")
 
 storageScript :: String
 storageScript = $(embedStringFile "scripts/storage.tn")
+
+defaultFunctions :: [(Symbol, Function)]
+defaultFunctions =
+  [ ("if", Function [Any, Any, Any] _if)
+  ]
 
 defaultScope :: Scope
 defaultScope =
@@ -42,6 +53,15 @@ defaultScope =
         ("imperial.tn", imperialScript),
         ("default.tn", defaultScript)
       ]
+
+defaultContext :: Context
+defaultContext = mkContext defaultScope._convs
+
+_if :: ResultT Scalar
+_if =
+  getLocal 0 >>= \case
+    0 -> getLocal 2
+    _ -> getLocal 1
 
 -- _eV :: Unit
 -- _eV = Unit "eV" _energy

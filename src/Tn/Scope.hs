@@ -5,7 +5,9 @@ module Tn.Scope where
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as G
 import qualified Data.Map.Strict as M
+import Tn.Context
 import Tn.Conv
+import Tn.Function
 import Tn.Scalar
 import Tn.Symbol
 import Tn.Unit
@@ -14,10 +16,8 @@ data Scope = Scope
   { _convs :: ConvGraph,
     _dims :: Map Symbol Base,
     _units :: Map Symbol Unit,
-    _constants :: Map Symbol Scalar,
-    _locals :: Map Symbol Scalar,
-    _ans :: Scalar,
-    _epsilon :: Double
+    _functions :: Map Symbol Function,
+    _globals :: Map Symbol Scalar
   }
 
 -- scopes are right-biased
@@ -27,10 +27,8 @@ instance Semigroup Scope where
       { _convs = G.overlay a._convs b._convs,
         _dims = a._dims <> b._dims,
         _units = a._units <> b._units,
-        _constants = a._constants <> b._constants,
-        _locals = a._locals <> b._locals,
-        _ans = b._ans,
-        _epsilon = b._epsilon
+        _functions = a._functions <> b._functions,
+        _globals = a._globals <> b._globals
       }
 
 instance Monoid Scope where
@@ -39,10 +37,8 @@ instance Monoid Scope where
       { _convs = G.empty,
         _dims = mempty,
         _units = mempty,
-        _constants = mempty,
-        _locals = mempty,
-        _ans = 0,
-        _epsilon = 1e-10
+        _functions = mempty,
+        _globals = mempty
       }
 
 declDim :: Symbol -> Scope -> Either String Scope

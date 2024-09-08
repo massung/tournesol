@@ -10,6 +10,7 @@ import qualified Data.Map.Strict as M
 import Text.Parsec
 import Text.Parsec.Expr
 import Text.Parsec.Token
+import Tn.Context
 import Tn.Error
 import Tn.Function
 import Tn.Ops
@@ -24,17 +25,17 @@ data Expr
   = Ans
   | Term Scalar
   | Convert Units Expr
-  | UnaryOp (Scalar -> OpResultT Scalar) Expr
-  | BinaryOp (Scalar -> Scalar -> OpResultT Scalar) Expr Expr
+  | UnaryOp (Scalar -> ResultT Scalar) Expr
+  | BinaryOp (Scalar -> Scalar -> ResultT Scalar) Expr Expr
+  | Apply Function [Expr]
 
--- | Apply Function [Expr]
 exprParser :: Parsec String Scope Expr
 exprParser = buildExpressionParser exprTable exprTerm <|> (do eof; return Ans)
 
 exprTerm :: Parsec String Scope Expr
 exprTerm =
   exprParens
-    -- <|> brackets lexer exprApply
+    <|> brackets lexer exprApply
     <|> (do reserved lexer "ans"; return Ans)
     <|> (do reserved lexer "true"; return $ Term 1)
     <|> (do reserved lexer "false"; return $ Term 0)
@@ -48,7 +49,7 @@ exprParens = do
     Nothing -> expr
     Just units -> Convert units expr
 
-exprConvert :: ParsecT String Scope Identity Units
+exprConvert :: Parsec String Scope Units
 exprConvert = lexeme lexer (char ':') >> unitsParser
 
 exprTable :: OperatorTable String Scope Identity Expr
@@ -61,17 +62,21 @@ exprTable =
     [Postfix (do Convert <$> exprConvert)]
   ]
 
-prefix :: String -> (Scalar -> OpResultT Scalar) -> Operator String Scope Identity Expr
+prefix :: String -> (Scalar -> ResultT Scalar) -> Operator String Scope Identity Expr
 prefix op f = Prefix (do reservedOp lexer op; return $ UnaryOp f)
 
-binary :: String -> (Scalar -> Scalar -> OpResultT Scalar) -> Assoc -> Operator String Scope Identity Expr
+binary :: String -> (Scalar -> Scalar -> ResultT Scalar) -> Assoc -> Operator String Scope Identity Expr
 binary op f = Infix (do reservedOp lexer op; return $ BinaryOp f)
 
--- exprApply :: ParsecT String Scope Identity Expr
--- exprApply = do
---   script <- getState
---   funcName <- identifier lexer <&> intern
---   xs <- sepBy exprParser (lexeme lexer $ char ';')
---   case M.lookup funcName script._funcs of
---     Just (f, _) -> return $ Apply f xs
---     Nothing -> fail "unknown function"
+exprApply :: Parsec String Scope Expr
+exprApply = do
+  funcName <- identifier lexer <&> intern
+  scope <- getState
+
+  -- lookup the function in the scope
+  f <- case M.lookup funcName scope._functions of
+    Nothing -> fail $ "unknown function: " ++ show funcName
+    Just f -> return f
+
+  -- get all the arguments
+  sepBy exprParser (lexeme lexer $ char ';') <&> Apply f

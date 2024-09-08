@@ -15,6 +15,7 @@ import Text.Parsec
 import Text.Parsec.Error
 import Text.Parsec.Token
 import Text.Printf
+import Tn.Context
 import Tn.Conv
 import Tn.Eval
 import Tn.Parser
@@ -104,7 +105,9 @@ unitConv name = do
   scope <- getState
 
   -- evaluate the expression
-  x <- either fail return $ evalExpr (0, scope) expr
+  x <-
+    let ctx = mkContext scope._convs
+     in either (fail . show) return $ runWithContext (evalExpr expr) ctx
 
   -- extract the linear ratio, units, and exponent
   (r, (to, e)) <- case x of

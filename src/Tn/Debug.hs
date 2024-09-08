@@ -5,6 +5,7 @@
 
 module Tn.Debug
   ( module Tn.Builtins,
+    module Tn.Context,
     module Tn.Conv,
     module Tn.Dims,
     module Tn.Eval,
@@ -23,8 +24,10 @@ module Tn.Debug
 where
 
 import qualified Data.Map.Strict as M
+import qualified Data.Vector as V
 import Text.Parsec
 import Tn.Builtins
+import Tn.Context
 import Tn.Conv
 import Tn.Dims
 import Tn.Eval
@@ -37,14 +40,15 @@ import Tn.Script
 import Tn.Symbol
 import Tn.Unit
 
-evalWithScope :: Scope -> String -> Either String Scalar
-evalWithScope scope s =
-  case runParser exprParser scope "" s of
-    Left err -> Left $ show err
-    Right expr -> evalExpr (0, scope) expr
+evalWithScope :: String -> Scalar -> Scope -> Either String Scalar
+evalWithScope s ans scope =
+  let ctx = Context scope._convs [V.singleton ans]
+   in case runParser exprParser scope "" s of
+        Left err -> Left $ show err
+        Right expr -> mapLeft show $ runWithContext (evalExpr expr) ctx
 
 evalWithDefaultScope :: String -> Either String Scalar
-evalWithDefaultScope = evalWithScope defaultScope
+evalWithDefaultScope s = evalWithScope s 0 defaultScope
 
 lookupDefaultUnit :: Symbol -> Maybe Unit
 lookupDefaultUnit s = M.lookup s defaultScope._units

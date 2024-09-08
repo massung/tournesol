@@ -1,30 +1,36 @@
-{-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Tn.Function where
 
-import Tn.Dims
-import Tn.Error
+import qualified Data.Vector as V
+import Tn.Context
 import Tn.Scalar
-import Tn.Symbol
 import Tn.Unit
 import Prelude hiding (Any, Arg)
 
--- expression function
-type Function = [Scalar] -> Either EvalError Scalar
+data Function = Function
+  { _args :: [ArgType],
+    _body :: ResultT Scalar
+  }
 
-{-
--- function argument
-data Arg
+data ArgType
   = Any
   | Untyped
-  | Typed Dims
+  | Typed Units
 
-_if :: [Scalar] -> Either EvalError Scalar
-_if [Scalar test Nothing, t, e] = Right $ if test == 0 then e else t
-_if [_, _, _] = Left InvalidArg
-_if _ = Left ArityMismatch
+mapArgs :: [Scalar] -> [ArgType] -> ResultT [Scalar]
+mapArgs [] [] = return []
+mapArgs [] _ = throwError ArityMismatch
+mapArgs _ [] = throwError ArityMismatch
+mapArgs (x : xs) (arg : args) = do
+  y <- shiftArg x arg
+  mapArgs xs args <&> (y :)
 
+shiftArg :: Scalar -> ArgType -> ResultT Scalar
+shiftArg x Any = return x
+shiftArg x@(Scalar _ Nothing) Untyped = return x
+shiftArg x (Typed u) = convertUnits x u
+shiftArg _ _ = throwError TypeMismatch
+
+{-
 defaultFunctions :: [(Symbol, Function)]
 defaultFunctions =
   [ ("if", wrapFunc _if [Untyped, Any, Any]),
