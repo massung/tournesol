@@ -64,5 +64,5 @@ scalarParser = do
     Left n -> option 1 (reservedOp lexer "%" >> integer lexer) <&> (n %)
     Right n -> return $ toRational n
 
-  u <- optionMaybe $ try unitsParser <|> unitsTerm
+  u <- optionMaybe $ try (unitsParser <|> unitsTerm)
   return $ Scalar r u

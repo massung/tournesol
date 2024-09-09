@@ -49,8 +49,9 @@ showParseError err = printf "error on line %d of %s: %s" line file msg
       [s] -> s
       _ -> "syntax error"
 
-comptimeEval :: Expr -> Parsec String Scope Scalar
-comptimeEval expr = do
+comptimeExpr :: Parsec String Scope Scalar
+comptimeExpr = do
+  expr <- exprParser
   scope <- getState
 
   -- create a temporary context from the current scope
@@ -101,7 +102,7 @@ constDecl = do
   reservedOp lexer "="
 
   -- parse the value
-  x <- scalarParser
+  x <- comptimeExpr
   scope <- getState
 
   -- all constants are just functions with no arguments
@@ -142,7 +143,7 @@ unitAlias name = do
 
 unitConv :: Symbol -> Parsec String Scope ()
 unitConv name = do
-  x <- exprParser >>= comptimeEval
+  x <- comptimeExpr
   scope <- getState
 
   -- extract the linear ratio, units, and exponent

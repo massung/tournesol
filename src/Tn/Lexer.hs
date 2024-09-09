@@ -8,7 +8,7 @@ import Text.Parsec.Expr
 import Text.Parsec.Token
 import Tn.Dims
 import Tn.Scope
-import Prelude hiding (Infix, (<|>))
+import Prelude hiding (Infix, try, (<|>))
 
 lexer :: GenTokenParser String Scope Identity
 lexer = makeTokenParser lang
@@ -46,7 +46,9 @@ signParser = option 1 (neg <|> pos)
 
 unitsOpTable :: (Ord a) => OperatorTable String Scope Identity (Dims a)
 unitsOpTable =
-  [ [ Infix (do reservedOp lexer "*"; return (<>)) AssocLeft,
-      Infix (do reservedOp lexer "/"; return (</>)) AssocLeft
+  [ [ Infix (do unitsOp "*"; return (<>)) AssocLeft,
+      Infix (do unitsOp "/"; return (</>)) AssocLeft
     ]
   ]
+  where
+    unitsOp op = try (do reservedOp lexer op; notFollowedBy (integer lexer))
