@@ -22,13 +22,12 @@ description: Please see the README on GitHub at <https://github.com/massung/tn#r
 dependencies:
   - rerebase
   - algebraic-graphs
-  - bytestring-trie
   - cmdargs
   - extra
   - file-embed
   - haskeline
   - parsec
-  - utf8-string
+  - safe
 
 ghc-options:
   - -Wall
@@ -51,6 +50,7 @@ executables:
       - -threaded
       - -rtsopts
       - -with-rtsopts=-N
+      - -O
     dependencies:
       - tn
 

@@ -3,6 +3,7 @@
 module Tn.Expr
   ( Expr (..),
     exprParser,
+    exprShifts,
   )
 where
 
@@ -22,6 +23,7 @@ import Prelude hiding (Infix, Prefix, (<|>))
 
 data Expr
   = Ans
+  | Shift
   | Term Scalar
   | Convert Units Expr
   | UnaryOp (Scalar -> ResultT Scalar) Expr
@@ -31,10 +33,19 @@ data Expr
 exprParser :: Parsec String Scope Expr
 exprParser = buildExpressionParser exprTable exprTerm <|> (do eof; return Ans)
 
+exprShifts :: Expr -> Bool
+exprShifts Shift = True
+exprShifts (Convert _ e) = exprShifts e
+exprShifts (UnaryOp _ e) = exprShifts e
+exprShifts (BinaryOp _ a b) = exprShifts a || exprShifts b
+exprShifts (Apply _ xs) = any exprShifts xs
+exprShifts _ = False
+
 exprTerm :: Parsec String Scope Expr
 exprTerm =
   exprParens
     <|> brackets lexer exprApply
+    <|> (do reserved lexer "_"; return Shift)
     <|> (do reserved lexer "ans"; return Ans)
     <|> (do reserved lexer "true"; return $ Term 1)
     <|> (do reserved lexer "false"; return $ Term 0)

@@ -93,7 +93,7 @@ runCmd opts st@(ans, _) s = do
 
 runExpr :: Opts -> (Scalar, Scope) -> Expr -> IO (Scalar, Scope)
 runExpr opts st@(ans, scope) expr =
-  case runWithContext (evalExpr expr) $ mkContext scope._convs ans of
+  case runWithContext (evalExpr expr) $ Context scope._convs [[ans]] of
     Left err -> print err >> return st
     Right ans' -> printAns opts ans' >> return (ans', scope)
 

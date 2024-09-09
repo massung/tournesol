@@ -15,6 +15,7 @@ import Prelude hiding (Any)
 
 evalExpr :: Expr -> ResultT Scalar
 evalExpr Ans = getLocal 0
+evalExpr Shift = shiftLocal
 evalExpr (Term x) = return x
 evalExpr (Convert to x) = evalConvert x to
 evalExpr (UnaryOp f x) = evalUnaryOp f x

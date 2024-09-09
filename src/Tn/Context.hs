@@ -2,6 +2,7 @@
 
 module Tn.Context where
 
+import Safe
 import Tn.Conv
 import Tn.Scalar
 import Tn.Unit
@@ -26,11 +27,7 @@ instance Show ContextError where
 
 instance Exception ContextError
 
--- state monad wrapped with error handling
 type ResultT = ExceptT ContextError (State Context)
-
-mkContext :: ConvGraph -> Scalar -> Context
-mkContext gr ans = Context gr [[ans]]
 
 runWithContext :: ResultT Scalar -> Context -> Either ContextError Scalar
 runWithContext it = evalState (runExceptT it)
@@ -43,12 +40,14 @@ getLocal i = do
   (Context _ locals) <- get
 
   -- default to 0 if no local exists
-  return $ fromMaybe 0 (nth (head locals) i)
+  return $ atDef 0 (head locals) i
+
+shiftLocal :: ResultT Scalar
+shiftLocal = gets arg >>= \(x, st) -> do put st; return x
   where
-    nth :: [a] -> Int -> Maybe a
-    nth [] _ = Nothing
-    nth (x : _) 0 = Just x
-    nth (_ : xs) n = nth xs (n - 1)
+    arg (Context gr []) = (0, Context gr [])
+    arg (Context gr ([] : xs)) = (0, Context gr ([] : xs))
+    arg (Context gr ((v : vs) : xs)) = (v, Context gr (vs : xs))
 
 buildConv :: [(Unit, Unit, Int)] -> ResultT (Maybe Conv)
 buildConv m = do

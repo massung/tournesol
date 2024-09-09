@@ -55,7 +55,7 @@ comptimeExpr = do
   scope <- getState
 
   -- create a temporary context from the current scope
-  let ctx = mkContext scope._convs 0
+  let ctx = Context scope._convs []
 
   -- run the xpression and return the result or error message
   either (fail . show) return $ runWithContext (evalExpr expr) ctx

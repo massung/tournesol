@@ -72,7 +72,7 @@ defaultScope =
       ]
 
 defaultContext :: Context
-defaultContext = mkContext defaultScope._convs 0
+defaultContext = Context defaultScope._convs []
 
 _if :: ResultT Scalar
 _if =
