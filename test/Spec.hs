@@ -26,21 +26,12 @@ main =
 embeddedScript :: String
 embeddedScript = $(embedStringFile "test/test.tn")
 
-testScope :: Scope
-testScope =
-  defaultScope
-    { _epsilon = 5e-3
-    }
-
-evalWithTestScope :: String -> Either String Scalar
-evalWithTestScope = evalWithScope testScope
-
 testUnits :: SpecWith ()
 testUnits = do
   describe "Unit equality" $ do
     it "m == m" $ do
       "m" `shouldBe` ("m" :: Unit)
-    it "_g /= _m" $ do
+    it "g /= m" $ do
       "g" `shouldNotBe` ("m" :: Unit)
 
   describe "Base dimensions" $ do

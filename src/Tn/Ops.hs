@@ -1,10 +1,8 @@
 module Tn.Ops where
 
 import Tn.Context
-import Tn.Conv
 import Tn.Dims
 import Tn.Scalar
-import Tn.Unit
 
 (+%) :: Scalar -> Scalar -> ResultT Scalar
 (+%) x@(Scalar _ Nothing) y = return $ x + y
@@ -20,7 +18,7 @@ import Tn.Unit
 (-%) x y = x +% negate y
 
 (/%) :: Scalar -> Scalar -> ResultT Scalar
-(/%) x 0 = throwError DivByZero
+(/%) _ 0 = throwError DivByZero
 (/%) x y = x *% recip y
 
 (^%) :: Scalar -> Scalar -> ResultT Scalar
@@ -28,8 +26,11 @@ import Tn.Unit
 (^%) x 1 = return x
 (^%) _ (Scalar _ (Just _)) = throwError InvalidExponent
 (^%) (Scalar x ux) (Scalar y _) =
-  let n = fromInteger $ numerator y
-   in return $ Scalar (x ^^ n) (fmap (*^ n) ux)
+  if denominator y /= 1
+    then throwError InvalidExponent
+    else
+      let n = fromInteger $ numerator y
+       in return $ Scalar (x ^^ n) (fmap (*^ n) ux)
 
 (<=>%) :: Scalar -> Scalar -> ResultT Scalar
 (<=>%) x y = x -% y <&> signum

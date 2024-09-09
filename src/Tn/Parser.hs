@@ -57,6 +57,12 @@ unitsTerm = do
 
 scalarParser :: Parsec String Scope Scalar
 scalarParser = do
-  n <- naturalOrFloat lexer
+  x <- naturalOrFloat lexer
+
+  -- optionally parse denominator
+  r <- case x of
+    Left n -> option 1 (reservedOp lexer "%" >> integer lexer) <&> (n %)
+    Right n -> return $ toRational n
+
   u <- optionMaybe $ try unitsParser <|> unitsTerm
-  return $ Scalar (either fromInteger toRational n) u
+  return $ Scalar r u

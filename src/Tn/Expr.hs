@@ -11,7 +11,6 @@ import Text.Parsec
 import Text.Parsec.Expr
 import Text.Parsec.Token
 import Tn.Context
-import Tn.Error
 import Tn.Function
 import Tn.Ops
 import Tn.Parser

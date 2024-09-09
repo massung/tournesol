@@ -19,6 +19,9 @@ import Prelude hiding (Any)
 defaultScript :: String
 defaultScript = $(embedStringFile "scripts/default.tn")
 
+electricalScript :: String
+electricalScript = $(embedStringFile "scripts/electrical.tn")
+
 imperialScript :: String
 imperialScript = $(embedStringFile "scripts/imperial.tn")
 
@@ -31,17 +34,30 @@ maritimeScript = $(embedStringFile "scripts/maritime.tn")
 storageScript :: String
 storageScript = $(embedStringFile "scripts/storage.tn")
 
-defaultFunctions :: [(Symbol, Function)]
+defaultFunctions :: Map Symbol Function
 defaultFunctions =
-  [ ("if", Function [Any, Any, Any] _if)
+  [ ("if", Function [Any, Any, Any] _if),
+    ("negate", Function [Any] $ getLocal 0 <&> negate),
+    ("abs", Function [Any] $ getLocal 0 <&> abs),
+    ("recip", Function [Any] $ getLocal 0 <&> recip),
+    ("sqrt", Function [Any] $ getLocal 0 >>= (^% 0.5)),
+    ("ceil", Function [Any] $ getLocal 0 <&> mapRealFrac ceiling),
+    ("floor", Function [Any] $ getLocal 0 <&> mapRealFrac floor),
+    ("round", Function [Any] $ getLocal 0 <&> mapRealFrac round),
+    ("truncate", Function [Any] $ getLocal 0 <&> mapRealFrac truncate),
+    ("exp", Function [Any] $ getLocal 0 <&> mapFloating exp),
+    ("log", Function [Any] $ getLocal 0 <&> mapFloating log)
   ]
 
 defaultScope :: Scope
 defaultScope =
-  case foldr load (Right mempty) scripts of
+  case foldr load (Right initialScope) scripts of
     Left err -> error err
     Right scope -> scope
   where
+    initialScope :: Scope
+    initialScope = mempty {_functions = defaultFunctions}
+
     load :: (String, String) -> Either String Scope -> Either String Scope
     load (fn, s) = either Left (loadScript fn s)
 
@@ -51,6 +67,7 @@ defaultScope =
         ("astronomical.tn", astronomicalScript),
         ("maritime.tn", maritimeScript),
         ("imperial.tn", imperialScript),
+        ("electrical.tn", electricalScript),
         ("default.tn", defaultScript)
       ]
 
@@ -62,9 +79,6 @@ _if =
   getLocal 0 >>= \case
     0 -> getLocal 2
     _ -> getLocal 1
-
--- _eV :: Unit
--- _eV = Unit "eV" _energy
 
 -- _Tf :: Unit
 -- _Tf = Unit "Tf" _temperature

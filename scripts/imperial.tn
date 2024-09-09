@@ -1,12 +1,12 @@
 # length units
-unit ft "feet" = 1250 / 381 m;
-unit in "inches" = 12 / 1 ft;
+unit ft "feet" = 381 % 1250 m;
+unit in "inches" = 1 % 12 ft;
 unit h "hands" = 4 in;
 unit yd "yards" = 3 ft;
 unit ch "chains" = 22 yd;
 unit mi "miles" = 5280 ft;
 unit lea "leagues" = 3 mi;
-unit link "links" = 1 / 100 ch;
+unit link "links" = 1 % 100 ch;
 unit rod "rods" = 25 link;
 
 # area units
@@ -14,15 +14,15 @@ unit acre "acres" = 43560 ft^2;
 
 # volume units
 unit pt "pints" = 568.26125 mL;
-unit floz "floor ounces" = 20 / 1 pt;
-unit cu "cups" = 2 / 1 pt;
+unit floz "floor ounces" = 1 % 20 pt;
+unit cu "cups" = 1 % 2 pt;
 unit qt "quarts" = 2 pt;
 unit gal "gallons" = 4 qt;
 
 # mass units
 unit lb "pounds" = 0.45359237 kg;
 unit slug "slugs" = 32.174049 lb;
-unit oz "ounces" = 16 / 1 lb;
+unit oz "ounces" = 1 % 16 lb;
 unit st "stones" = 14 lb;
 unit qtr "quarter stones" = 28 lb;
 unit cwt "hundred weights" = 112 lb;
@@ -43,4 +43,4 @@ unit bar "bars" = 100 kPa;
 unit atm "atmospheres" = 101325 Pa;
 
 # speed units
-unit mph = mi / hr;
+unit mph "miles per hour" = mi / hr;

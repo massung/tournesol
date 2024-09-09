@@ -17,11 +17,18 @@ data ContextError
   | InvalidExponent
   | NoConversion
   | TypeMismatch
-  deriving (Show)
+
+instance Show ContextError where
+  show ArityMismatch = "arity mismatch"
+  show DisparateUnits = "disparate units"
+  show DivByZero = "divide by zero"
+  show InvalidExponent = "invalid exponent (non-natural or has units)"
+  show NoConversion = "no conversion found"
+  show TypeMismatch = "type mismatch"
 
 instance Exception ContextError
 
---
+-- state monad wrapped with error handling
 type ResultT = ExceptT ContextError (State Context)
 
 mkContext :: ConvGraph -> Scalar -> Context
@@ -58,9 +65,10 @@ convertUnits (Scalar x (Just ux)) uy =
       let m = unitsToConv ux uy
        in if null m
             then return $ Scalar x (Just uy)
-            else buildConv m >>= \case
-              Just conv -> return $ Scalar (applyConv x conv) (Just uy)
-              _ -> throwError NoConversion
+            else
+              buildConv m >>= \case
+                Just conv -> return $ Scalar (applyConv x conv) (Just uy)
+                _ -> throwError NoConversion
 
 convertSharedUnits :: Scalar -> Units -> ResultT Scalar
 convertSharedUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
@@ -68,6 +76,7 @@ convertSharedUnits s@(Scalar x (Just ux)) uy = do
   let m = unitsToConv ux uy
    in if null m
         then return s -- Scalar x (ux <> uy)
-        else buildConv m >>= \case
-          Just conv -> return $ Scalar (applyConv x conv) (Just $ convUnits m ux)
-          _ -> throwError NoConversion
+        else
+          buildConv m >>= \case
+            Just conv -> return $ Scalar (applyConv x conv) (Just $ convUnits m ux)
+            _ -> throwError NoConversion

@@ -5,7 +5,6 @@ module Tn.Scope where
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as G
 import qualified Data.Map.Strict as M
-import Tn.Context
 import Tn.Conv
 import Tn.Function
 import Tn.Scalar
@@ -47,6 +46,12 @@ declDim d scope =
     then Left "dimension already defined"
     else Right scope {_dims = M.insert d (Base d) scope._dims}
 
+declConst :: Symbol -> Scalar -> Scope -> Either String Scope
+declConst s x scope =
+  if M.member s scope._globals
+    then Left "constant already defined"
+    else Right scope {_globals = M.insert s x scope._globals}
+
 declUnit :: Unit -> Scope -> Either String Scope
 declUnit u@(Unit s _) scope =
   if M.member s scope._units
@@ -61,3 +66,9 @@ declConvs g scope =
     }
   where
     units' = [(s, u) | u@(Unit s _) <- G.vertexList g]
+
+declFunction :: Symbol -> Function -> Scope -> Either String Scope
+declFunction name f scope =
+  if M.member name scope._functions
+    then Left "function already defined"
+    else Right scope {_functions = M.insert name f scope._functions}

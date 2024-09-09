@@ -1,28 +1,18 @@
 # fundamental dimensions
 dim angle;
-dim current;
 dim length;
 dim mass;
-dim temperature;
 dim time;
 
 # base units
 unit rad "radians" = base angle;
-unit A "amperes" = base current;
 unit m "meters" = base length;
 unit g "grams" = base mass;
-unit Tc "degrees celcius" = base temperature;
 unit s "seconds" = base time;
 
 # declare si conversions
-si A;
 si m;
 si g;
-
-# angle units
-#unit deg = 180 / pi rad;
-#unit grad = 400 / 360 deg;
-#unit rev = 1 / 360 deg;
 
 # area and volume
 unit ha "hectares" = 10000 m^2;
@@ -35,12 +25,6 @@ unit Pa "pascals" = kg / m s^2;
 unit J "joules" = kg m^2 / s^2;
 unit W "watts" = kg m^2 / s^3;
 
-# electrical units
-unit C "coulombs" = s A;
-unit F "farads" = s^4 A^2 / kg m^2;
-unit V "volts" = kg m^2 / s^3 A;
-unit O "ohms" = kg m^2 / s^3 A^2;
-
 # derived si units
 si hz;
 si L;
@@ -48,17 +32,24 @@ si N;
 si Pa;
 si J;
 si W;
-si C;
-si F;
-si V;
-si O;
+
+# physical constants
+const pi = 3.14159265358979323846;
+const e = 2.71828182845904523536;
+const c = 299792458 m/s;
+const G = 6.67430e-11 N m^2/kg^2;
 
 # time units
 unit min "minutes" = 60 s;
 unit hr "hours" = 60 min;
 unit day "days" = 24 hr;
 
+# angle units
+unit deg = 180 / ([pi] : rad);
+unit grad = 360 % 400 deg;
+unit rev = 360 deg;
+
 # rate units
-unit mps = m / s;
-unit kph = km / hr;
-#unit rpm = rev / min;
+unit mps "meters per second" = m / s;
+unit kph "kilometers per hour" = km / hr;
+unit rpm "revolutions per minute" = rev / min;

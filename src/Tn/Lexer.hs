@@ -21,7 +21,7 @@ lexer = makeTokenParser lang
           nestedComments = False,
           identStart = letter <|> char '_',
           identLetter = letter,
-          opStart = oneOf "^+-*/<>=",
+          opStart = oneOf "^+-*/<>=%",
           opLetter = oneOf "^+-*/<>=",
           reservedNames = ["_", "ans", "base", "binary", "const", "dim", "english", "function", "imperial", "si", "unit"],
           reservedOpNames = ["+", "-", "*", "/", "^", "=", "==", "<", ">", "<=", ">=", "<>"],

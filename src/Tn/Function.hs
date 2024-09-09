@@ -1,6 +1,5 @@
 module Tn.Function where
 
-import qualified Data.Vector as V
 import Tn.Context
 import Tn.Scalar
 import Tn.Unit
@@ -33,13 +32,7 @@ shiftArg _ _ = throwError TypeMismatch
 {-
 defaultFunctions :: [(Symbol, Function)]
 defaultFunctions =
-  [ ("if", wrapFunc _if [Untyped, Any, Any]),
-    -- num functions
-    ("abs", unaryFunc abs Any),
-    ("recip", unaryFunc recip Any),
-    ("signum", unaryFunc signum Any),
-    ("sqrt", unaryFunc (`powScalar` 0.5) Any),
-    -- floating functions
+  [ -- floating functions
     ("sin", unaryFunc (mapFloating sin) $ Typed $ Dims [(_angle, 1)]),
     ("cos", unaryFunc (mapFloating cos) $ Typed $ Dims [(_angle, 1)]),
     ("tan", unaryFunc (mapFloating tan . (Units [(_rad, 1)] `convertTo`)) $ Typed $ Dims [(_angle, 1)]),
@@ -52,13 +45,6 @@ defaultFunctions =
     ("asinh", unaryFunc (mapFloating asinh) Untyped),
     ("acosh", unaryFunc (mapFloating acosh) Untyped),
     ("atanh", unaryFunc (mapFloating atanh) Untyped)
-    -- realfrac functions
-    -- ("ceil", unaryFunc (mapIntegral ceiling) Any),
-    -- ("exp", unaryFunc (mapFloating exp) Untyped),
-    -- ("floor", unaryFunc (mapFloating floor) Any),
-    -- ("log", unaryFunc (mapFloating log) Untyped),
-    -- ("round", unaryFunc (mapFloating round) Any),
-    -- ("truncate", unaryFunc (mapFloating truncate) Any)
   ]
 -}
 {-

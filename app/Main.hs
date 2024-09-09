@@ -8,8 +8,10 @@ module Main (main) where
 import System.Console.CmdArgs
 import System.Console.Haskeline
 import System.Console.Haskeline.IO
+import Text.Parsec
 import Tn.Builtins
 import Tn.Debug
+import Prelude hiding ((<|>))
 
 data Opts = Opts
   { scriptFiles :: [String],
@@ -62,31 +64,51 @@ printFormat opts (Scalar x _) = "%0." ++ prec ++ (if sciNotation opts then "g" e
         then "0"
         else show (fromMaybe 2 $ precision opts)
 
-printAns :: Opts -> Scalar -> IO Scalar
+printAns :: Opts -> Scalar -> IO ()
 printAns opts ans@(Scalar _ u) = do
   if isJust u && not opts.noUnits
     then printf (printFormat opts ans ++ " %U\n") ans ans
     else printf (printFormat opts ans ++ "\n") ans
-  return ans
 
-runExpr :: Opts -> Scope -> Scalar -> String -> IO Scalar
-runExpr opts scope ans s =
-  case evalWithScope s ans scope of
-    Left err -> putStrLn err >> return ans
-    Right ans' -> printAns opts ans'
+parseCmd :: (Scalar, Scope) -> String -> Either String (Either Scope Expr)
+parseCmd (_, scope) s =
+  case runParser statementOrExpr scope "<repl>" s of
+    Left err -> Left $ showParseError err
+    Right result -> Right result
+  where
+    statementOrExpr = do
+      cmd <- statement <|> expr
+      eof
+      return cmd
 
-repl :: Opts -> Scope -> Scalar -> InputState -> IO ()
-repl opts scope ans is = do
+    statement = statementParser >> getState <&> Left
+    expr = exprParser <&> Right
+
+runCmd :: Opts -> (Scalar, Scope) -> String -> IO (Scalar, Scope)
+runCmd opts st@(ans, _) s = do
+  case parseCmd st s of
+    Left err -> putStrLn err >> return st
+    Right (Left scope) -> return (ans, scope)
+    Right (Right expr) -> runExpr opts st expr
+
+runExpr :: Opts -> (Scalar, Scope) -> Expr -> IO (Scalar, Scope)
+runExpr opts st@(ans, scope) expr =
+  case runWithContext (evalExpr expr) $ mkContext scope._convs ans of
+    Left err -> print err >> return st
+    Right ans' -> printAns opts ans' >> return (ans', scope)
+
+repl :: Opts -> (Scalar, Scope) -> InputState -> IO ()
+repl opts st is = do
   queryInput is (getInputLine ">> ") >>= \case
-    Nothing -> repl opts scope ans is
+    Nothing -> repl opts st is
     Just s -> do
-      ans' <- runExpr opts scope ans s
-      repl opts scope ans' is
+      st' <- runCmd opts st s
+      repl opts st' is
 
 runInteractive :: Opts -> Scope -> IO InputState -> IO ()
 runInteractive opts scope is = do
   putStrLn motd
-  bracketOnError is cancelInput $ repl opts scope 0
+  bracketOnError is cancelInput $ repl opts (0, scope)
 
 loadScripts :: [String] -> IO Scope
 loadScripts = foldM load mempty
@@ -109,4 +131,4 @@ main = do
   -- run supplied expressions or enter read-eval-print-loop
   case opts.exprStrings of
     [] -> runInteractive opts scope $ initializeInput defaultSettings
-    exprs -> mapM_ (runExpr opts scope 0) exprs
+    exprs -> mapM_ (runCmd opts (0, scope)) exprs

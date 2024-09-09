@@ -7,10 +7,8 @@ module Tn.Eval
 where
 
 import Tn.Context
-import Tn.Conv
 import Tn.Expr
 import Tn.Function
-import Tn.Ops
 import Tn.Scalar
 import Tn.Unit
 import Prelude hiding (Any)

@@ -30,7 +30,6 @@ library
       Tn.Conv
       Tn.Debug
       Tn.Dims
-      Tn.Error
       Tn.Eval
       Tn.Expr
       Tn.Function

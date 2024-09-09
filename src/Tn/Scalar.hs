@@ -52,6 +52,25 @@ instance Num Scalar where
   abs = mapScalar abs
   signum = dropUnits . mapScalar signum
 
+instance Enum Scalar where
+  toEnum i = Scalar (toInteger i % 1) Nothing
+  fromEnum x = fromEnum $ toInteger x
+
+instance Integral Scalar where
+  toInteger (Scalar x _) = numerator x `div` denominator x
+
+  -- divide a scalar and return quotient and remainder with units
+  quotRem (Scalar x ux) (Scalar y uy)
+    | isNothing ux = (Scalar (q % 1) uy, Scalar (r % 1) uy)
+    | isNothing uy = (Scalar (q % 1) ux, Scalar (r % 1) ux)
+    | otherwise = assert (maybe True verifyUnits u) (Scalar (q % 1) u, Scalar (r % 1) u)
+    where
+      u = ux <> fmap recipDims uy
+      n = x / y
+
+      -- divide the fraction to get quotient and remainder
+      (q, r) = quotRem (numerator n) (denominator n)
+
 instance Real Scalar where
   toRational (Scalar n _) = n
 
@@ -61,6 +80,12 @@ instance Fractional Scalar where
   -- reciprocal of scalar and units
   recip (Scalar 0 _) = invalidScalar
   recip (Scalar n u) = Scalar (recip n) (fmap recipDims u)
+
+instance RealFrac Scalar where
+  properFraction x@(Scalar n u) =
+    let i = toInteger x
+        f = fromRational $ n - fromInteger i
+     in (fromInteger i, Scalar f u)
 
 invalidScalar :: Scalar
 invalidScalar = Scalar infinity Nothing
@@ -76,3 +101,11 @@ mapScalar f (Scalar n u) = Scalar (f n) u
 
 powScalar :: Scalar -> Int -> Scalar
 powScalar (Scalar x u) n = Scalar (x ^^ n) $ fmap (*^ n) u
+
+mapRealFrac :: (Scalar -> Integer) -> Scalar -> Scalar
+mapRealFrac f x@(Scalar _ u) = Scalar (fromIntegral $ f x) u
+
+mapFloating :: (Double -> Double) -> Scalar -> Scalar
+mapFloating f (Scalar x _) = Scalar x' Nothing
+  where
+    x' = toRational . f $ fromRational x

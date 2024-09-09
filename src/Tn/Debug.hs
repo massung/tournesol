@@ -24,7 +24,6 @@ module Tn.Debug
 where
 
 import qualified Data.Map.Strict as M
-import qualified Data.Vector as V
 import Text.Parsec
 import Tn.Builtins
 import Tn.Context
@@ -44,7 +43,7 @@ evalWithScope :: String -> Scalar -> Scope -> Either String Scalar
 evalWithScope s ans scope =
   let ctx = mkContext scope._convs ans
    in case runParser exprParser scope "" s of
-        Left err -> Left $ show err
+        Left err -> Left $ showParseError err
         Right expr -> mapLeft show $ runWithContext (evalExpr expr) ctx
 
 evalWithDefaultScope :: String -> Either String Scalar

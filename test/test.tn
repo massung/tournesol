@@ -1,32 +1,5 @@
-# declare a couple known dimensions
-dim length;
-dim time;
+# This is a test of using Tournesol for school work!
 
-# declare the base units for each dimension
-unit m = base length;
-unit s = base time;
-
-# derive metric units
-si m;
-
-# derived length conversion units
-unit ft = 1250 / 381 m;
-unit in = 12 / 1 ft;
-unit yd = 3 ft;
-unit mi = 5280 ft;
-
-# derived time conversion units
-unit min = 60 s;
-unit hr  = 60 min;
-unit day = 24 hr;
-
-# derived speed units
-unit kph = km / hr;
-unit mph = mi / hr;
-
-# create some more complex units
-unit acre = 43560 ft^2;
-unit L = 1000 cm^3;
-
-# derived metric units
-si L;
+unit box;
+unit ball;
+unit usd;
