@@ -3,6 +3,7 @@ module Tn.Ops where
 import Tn.Context
 import Tn.Dims
 import Tn.Scalar
+import Tn.Unit
 
 (+%) :: Scalar -> Scalar -> ResultT Scalar
 (+%) x@(Scalar _ Nothing) y = return $ x + y
@@ -52,3 +53,14 @@ import Tn.Scalar
 
 (>%) :: Scalar -> Scalar -> ResultT Scalar
 (>%) x y = x <=>% y <&> fromIntegral . fromEnum . (> 0)
+
+sqrtScalar :: Scalar -> ResultT Scalar
+sqrtScalar (Scalar x u) = mapM root u <&> Scalar x'
+  where
+    x' = toRational . sqrt $ (fromRational x :: Double)
+
+    root :: Units -> ResultT Units
+    root u'@(Dims m) =
+      if all ((== 0) . (.&. 1)) m
+        then return $ mapDims (`div` 2) u'
+        else throwError InvalidExponent

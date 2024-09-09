@@ -40,7 +40,7 @@ defaultFunctions =
     ("negate", Function [Any] $ getLocal 0 <&> negate),
     ("abs", Function [Any] $ getLocal 0 <&> abs),
     ("recip", Function [Any] $ getLocal 0 <&> recip),
-    ("sqrt", Function [Any] $ getLocal 0 >>= (^% 0.5)),
+    ("sqrt", Function [Any] $ getLocal 0 >>= sqrtScalar),
     ("ceil", Function [Any] $ getLocal 0 <&> mapRealFrac ceiling),
     ("floor", Function [Any] $ getLocal 0 <&> mapRealFrac floor),
     ("round", Function [Any] $ getLocal 0 <&> mapRealFrac round),

@@ -1,14 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot #-}
 
 module Tn.Context where
 
-import qualified Data.Vector as V
 import Tn.Conv
 import Tn.Scalar
 import Tn.Unit
 
-data Context = Context ConvGraph [Vector Scalar]
+data Context = Context ConvGraph [[Scalar]]
 
 data ContextError
   = ArityMismatch
@@ -32,20 +30,25 @@ instance Exception ContextError
 type ResultT = ExceptT ContextError (State Context)
 
 mkContext :: ConvGraph -> Scalar -> Context
-mkContext gr ans = Context gr [V.singleton ans]
+mkContext gr ans = Context gr [[ans]]
 
 runWithContext :: ResultT Scalar -> Context -> Either ContextError Scalar
 runWithContext it = evalState (runExceptT it)
 
 push :: [Scalar] -> Context -> Context
-push xs (Context gr locals) = Context gr $ V.fromList xs : locals
+push xs (Context gr locals) = Context gr $ xs : locals
 
 getLocal :: Int -> ResultT Scalar
 getLocal i = do
   (Context _ locals) <- get
 
   -- default to 0 if no local exists
-  return $ fromMaybe 0 (head locals V.!? i)
+  return $ fromMaybe 0 (nth (head locals) i)
+  where
+    nth :: [a] -> Int -> Maybe a
+    nth [] _ = Nothing
+    nth (x : _) 0 = Just x
+    nth (_ : xs) n = nth xs (n - 1)
 
 buildConv :: [(Unit, Unit, Int)] -> ResultT (Maybe Conv)
 buildConv m = do

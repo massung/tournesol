@@ -119,7 +119,8 @@ unitDecl = do
 
   -- either `= ...` or it's a base dimension of itself
   do reservedOp lexer "=" >> (unitBase name <|> unitAlias name <|> unitConv name)
-    <|> let scope' = declDim name scope >>= declUnit (Unit name $ Base name)
+    <|> let dim = intern $ printf "[%s]" (show name)
+            scope' = declDim dim scope >>= declUnit (Unit name $ Base dim)
          in either fail putState scope'
 
 unitBase :: Symbol -> Parsec String Scope ()
