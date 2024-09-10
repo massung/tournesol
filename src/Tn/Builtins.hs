@@ -14,6 +14,7 @@ import Tn.Scalar
 import Tn.Scope
 import Tn.Script
 import Tn.Symbol
+import Tn.Unit
 import Prelude hiding (Any)
 
 defaultScript :: String
@@ -46,8 +47,23 @@ defaultFunctions =
     ("round", Function [Any] $ getLocal 0 <&> mapRealFrac round),
     ("truncate", Function [Any] $ getLocal 0 <&> mapRealFrac truncate),
     ("exp", Function [Any] $ getLocal 0 <&> mapFloating exp),
-    ("log", Function [Any] $ getLocal 0 <&> mapFloating log)
+    ("log", Function [Any] $ getLocal 0 <&> mapFloating log),
+    ("sin", Function [Typed rads] $ getLocal 0 <&> mapFloating sin),
+    ("cos", Function [Typed rads] $ getLocal 0 <&> mapFloating cos),
+    ("tan", Function [Typed rads] $ getLocal 0 <&> mapFloating tan),
+    ("sinh", Function [Typed rads] $ getLocal 0 <&> mapFloating sinh),
+    ("cosh", Function [Typed rads] $ getLocal 0 <&> mapFloating cosh),
+    ("tanh", Function [Typed rads] $ getLocal 0 <&> mapFloating tanh),
+    ("asin", Function [Untyped] $ getLocal 0 <&> mapFloating asin),
+    ("acos", Function [Untyped] $ getLocal 0 <&> mapFloating acos),
+    ("atan", Function [Untyped] $ getLocal 0 <&> mapFloating atan),
+    ("asinh", Function [Untyped] $ getLocal 0 <&> mapFloating asinh),
+    ("acosh", Function [Untyped] $ getLocal 0 <&> mapFloating acosh),
+    ("atanh", Function [Untyped] $ getLocal 0 <&> mapFloating atanh)
   ]
+  where
+    rads :: Units
+    rads = [(Unit "rad" $ Base "[angle]", 1)]
 
 defaultScope :: Scope
 defaultScope =
