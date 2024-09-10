@@ -39,15 +39,15 @@ import Tn.Script
 import Tn.Symbol
 import Tn.Unit
 
-evalWithScope :: String -> [Scalar] -> Scope -> Either String Scalar
-evalWithScope s xs scope =
-  let ctx = Context scope._convs [xs]
+evalWithScope :: String -> Scope -> Either String Scalar
+evalWithScope s scope =
+  let ctx = Context scope._convs [[]]
    in case runParser exprParser scope "" s of
         Left err -> Left $ showParseError err
         Right expr -> mapLeft show $ runWithContext (evalExpr expr) ctx
 
 evalWithDefaultScope :: String -> Either String Scalar
-evalWithDefaultScope s = evalWithScope s [] defaultScope
+evalWithDefaultScope s = evalWithScope s defaultScope
 
 lookupDefaultUnit :: Symbol -> Maybe Unit
 lookupDefaultUnit s = M.lookup s defaultScope._units

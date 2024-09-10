@@ -39,6 +39,9 @@ import Tn.Unit
 (==%) :: Scalar -> Scalar -> ResultT Scalar
 (==%) x y = x <=>% y <&> fromIntegral . fromEnum . (== 0)
 
+(~=%) :: Scalar -> Scalar -> ResultT Scalar
+(~=%) x y = x -% y <&> fromIntegral . fromEnum . (< 1e-8) . abs
+
 (/=%) :: Scalar -> Scalar -> ResultT Scalar
 (/=%) x y = x <=>% y <&> fromIntegral . fromEnum . (/= 0)
 
