@@ -96,20 +96,11 @@ _if =
     0 -> getLocal 2
     _ -> getLocal 1
 
--- _Tf :: Unit
--- _Tf = Unit "Tf" _temperature
--- where
---   cToF x = x * (9 % 5) + 32
---   fToC x = (x - 32) * (5 % 9)
+-- cToF x = x * (9 % 5) + 32
+-- fToC x = (x - 32) * (5 % 9)
 
--- _Tk :: Unit
--- _Tk = Unit "Tk" _temperature
--- where
---   cToK x = x + 273.15
---   kToC x = x - 273.15
+-- cToK x = x + 273.15
+-- kToC x = x - 273.15
 
--- _Tr :: Unit
--- _Tr = Unit "Tr" _temperature
--- where
---   cToR x = x * (9 % 5) + 491.67
---   rToC x = (x - 491.67) * (5 % 9)
+-- cToR x = x * (9 % 5) + 491.67
+-- rToC x = (x - 491.67) * (5 % 9)
