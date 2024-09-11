@@ -3,6 +3,8 @@
 module Tn.Context where
 
 import Safe
+import Text.Parsec hiding (State)
+import Text.Parsec.Error
 import Tn.Conv
 import Tn.Scalar
 import Tn.Unit
@@ -16,6 +18,8 @@ data ContextError
   | InvalidExponent
   | NoConversion
   | TypeMismatch
+  | SyntaxError ParseError
+  deriving (Eq)
 
 instance Show ContextError where
   show ArityMismatch = "arity mismatch"
@@ -24,6 +28,13 @@ instance Show ContextError where
   show InvalidExponent = "invalid exponent (non-natural or has units)"
   show NoConversion = "no conversion found"
   show TypeMismatch = "type mismatch"
+  show (SyntaxError err) = printf "%s on line %d" msg line
+    where
+      pos = errorPos err
+      line = sourceLine pos
+      msg = case unwords [e | (Message e) <- errorMessages err] of
+        "" -> "syntax error"
+        errmsg -> errmsg
 
 instance Exception ContextError
 

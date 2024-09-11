@@ -5,6 +5,7 @@ module Tn.Scope where
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as G
 import qualified Data.Map.Strict as M
+import Tn.Context
 import Tn.Conv
 import Tn.Function
 import Tn.Scalar
@@ -16,7 +17,8 @@ data Scope = Scope
     _dims :: Map Symbol Base,
     _units :: Map Symbol Unit,
     _functions :: Map Symbol Function,
-    _globals :: Map Symbol Scalar
+    _globals :: Map Symbol Scalar,
+    _history :: [Scalar]
   }
 
 -- scopes are right-biased
@@ -27,7 +29,8 @@ instance Semigroup Scope where
         _dims = a._dims <> b._dims,
         _units = a._units <> b._units,
         _functions = a._functions <> b._functions,
-        _globals = a._globals <> b._globals
+        _globals = a._globals <> b._globals,
+        _history = a._history <> b._history
       }
 
 instance Monoid Scope where
@@ -37,8 +40,15 @@ instance Monoid Scope where
         _dims = mempty,
         _units = mempty,
         _functions = mempty,
-        _globals = mempty
+        _globals = mempty,
+        _history = mempty
       }
+
+mkContext :: Scope -> Context
+mkContext scope = Context scope._convs [scope._history]
+
+pushAns :: Scalar -> Scope -> Scope
+pushAns x scope = scope {_history = x : scope._history}
 
 declDim :: Symbol -> Scope -> Either String Scope
 declDim d scope =

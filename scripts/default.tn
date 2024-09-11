@@ -34,10 +34,9 @@ si J;
 si W;
 
 # physical constants
-const pi = 3.14159265358979323846;
-const e = 2.71828182845904523536;
+const pi = 245850922 % 78256779;
+const e = [pi] * 53035 % 61294;
 const c = 299792458 m/s;
-const G = 6.67430e-11 N m^2/kg^2;
 
 # time units
 unit min "minutes" = 60 s;

@@ -18,8 +18,6 @@ module Tn.Debug
     module Tn.Unit,
     evalWithScope,
     evalWithDefaultScope,
-    lookupDefaultUnit,
-    lookupDefaultConv,
   )
 where
 
@@ -39,24 +37,14 @@ import Tn.Script
 import Tn.Symbol
 import Tn.Unit
 
-evalWithScope :: String -> Scope -> Either String Scalar
+evalWithScope :: String -> Scope -> Either ContextError Scalar
 evalWithScope s scope =
-  let ctx = Context scope._convs [[]]
-   in case runParser exprParser scope "" s of
-        Left err -> Left $ showParseError err
-        Right expr -> mapLeft show $ runWithContext (evalExpr expr) ctx
+  case runParser exprParser scope "" s of
+    Left err -> Left $ SyntaxError err
+    Right expr -> runWithContext (evalExpr expr) (mkContext scope)
 
-evalWithDefaultScope :: String -> Either String Scalar
+evalWithDefaultScope :: String -> Either ContextError Scalar
 evalWithDefaultScope s = evalWithScope s defaultScope
-
-lookupDefaultUnit :: Symbol -> Maybe Unit
-lookupDefaultUnit s = M.lookup s defaultScope._units
-
-lookupDefaultConv :: (Symbol, Int) -> Symbol -> Maybe Conv
-lookupDefaultConv (from, n) to = do
-  from' <- lookupDefaultUnit from
-  to' <- lookupDefaultUnit to
-  findConv (from', n) to' defaultScope._convs
 
 instance IsString Scalar where
   fromString s = case runParser scalarParser defaultScope "" s of

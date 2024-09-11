@@ -7,14 +7,12 @@ module Tn.Script
   ( loadScript,
     loadScriptFile,
     statementParser,
-    showParseError,
   )
 where
 
 import qualified Algebra.Graph.Labelled.AdjacencyMap as G
 import qualified Data.Map.Strict as M
 import Text.Parsec
-import Text.Parsec.Error
 import Text.Parsec.Token
 import Text.Printf
 import Tn.Context
@@ -29,36 +27,21 @@ import Tn.System
 import Tn.Unit
 import Prelude hiding ((<|>))
 
-loadScript :: String -> String -> Scope -> Either String Scope
-loadScript filename source scope = mapLeft showParseError scope'
-  where
-    scope' = runParser scriptParser scope filename source
+loadScript :: String -> String -> Scope -> Either ParseError Scope
+loadScript filename source scope = runParser scriptParser scope filename source
 
-loadScriptFile :: String -> Scope -> IO (Either String Scope)
+loadScriptFile :: String -> Scope -> IO (Either ParseError Scope)
 loadScriptFile filename scope = do
   source <- readFile filename
   return $ loadScript filename source scope
-
-showParseError :: ParseError -> String
-showParseError err = printf "error on line %d of %s: %s" line file msg
-  where
-    pos = errorPos err
-    file = sourceName pos
-    line = sourceLine pos
-    msg = case [e | (Message e) <- errorMessages err] of
-      [s] -> s
-      _ -> "syntax error"
 
 comptimeExpr :: Parsec String Scope Scalar
 comptimeExpr = do
   expr <- exprParser
   scope <- getState
 
-  -- create a temporary context from the current scope
-  let ctx = Context scope._convs []
-
-  -- run the xpression and return the result or error message
-  either (fail . show) return $ runWithContext (evalExpr expr) ctx
+  -- run the expression and return the result or error message
+  either (fail . show) return $ runWithContext (evalExpr expr) (mkContext scope)
 
 scriptParser :: Parsec String Scope Scope
 scriptParser = do

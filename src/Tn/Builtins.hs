@@ -7,6 +7,7 @@
 module Tn.Builtins where
 
 import Data.FileEmbed
+import Text.Parsec.Error
 import Tn.Context
 import Tn.Function
 import Tn.Ops
@@ -68,13 +69,13 @@ defaultFunctions =
 defaultScope :: Scope
 defaultScope =
   case foldr load (Right initialScope) scripts of
-    Left err -> error err
+    Left err -> error $ show err
     Right scope -> scope
   where
     initialScope :: Scope
     initialScope = mempty {_functions = defaultFunctions}
 
-    load :: (String, String) -> Either String Scope -> Either String Scope
+    load :: (String, String) -> Either ParseError Scope -> Either ParseError Scope
     load (fn, s) = either Left (loadScript fn s)
 
     scripts :: [(String, String)]

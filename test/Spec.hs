@@ -22,8 +22,8 @@ embeddedScript = $(embedStringFile "test/test.tn")
 
 testScope :: Scope
 testScope = case loadScript "test" embeddedScript mempty of
+  Left e -> error $ show (SyntaxError e)
   Right scope -> scope
-  Left e -> error e
 
 testExpr :: String -> Scalar -> SpecWith (Arg Expectation)
 testExpr expr res =
