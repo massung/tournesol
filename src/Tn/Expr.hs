@@ -1,9 +1,9 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 
 module Tn.Expr
   ( Expr (..),
     exprParser,
-    exprShifts,
   )
 where
 
@@ -33,23 +33,15 @@ data Expr
 exprParser :: Parsec String Scope Expr
 exprParser = buildExpressionParser exprTable exprTerm <|> (do eof; return Ans)
 
-exprShifts :: Expr -> Bool
-exprShifts Shift = True
-exprShifts (Convert _ e) = exprShifts e
-exprShifts (UnaryOp _ e) = exprShifts e
-exprShifts (BinaryOp _ a b) = exprShifts a || exprShifts b
-exprShifts (Apply _ xs) = any exprShifts xs
-exprShifts _ = False
-
 exprTerm :: Parsec String Scope Expr
 exprTerm =
   exprParens
     <|> brackets lexer exprApply
-    <|> (do reserved lexer "_"; return Shift)
     <|> (do reserved lexer "ans"; return Ans)
     <|> (do reserved lexer "true"; return $ Term 1)
     <|> (do reserved lexer "false"; return $ Term 0)
     <|> (scalarParser <&> Term)
+    <|> exprShift
 
 exprParens :: Parsec String Scope Expr
 exprParens = do
@@ -61,6 +53,15 @@ exprParens = do
 
 exprConvert :: Parsec String Scope Units
 exprConvert = lexeme lexer (char ':') >> unitsParser
+
+exprShift :: Parsec String Scope Expr
+exprShift = do
+  reserved lexer "_"
+
+  -- optionally allow for the shift to cast
+  optionMaybe unitsParser <&> \case
+    Just units -> Convert units Shift
+    Nothing -> Shift
 
 exprTable :: OperatorTable String Scope Identity Expr
 exprTable =

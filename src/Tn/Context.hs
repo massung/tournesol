@@ -9,7 +9,7 @@ import Tn.Conv
 import Tn.Scalar
 import Tn.Unit
 
-data Context = Context ConvGraph [[Scalar]]
+data Context = Context ConvGraph [Scalar]
 
 data ContextError
   = ArityMismatch
@@ -44,21 +44,20 @@ runWithContext :: ResultT Scalar -> Context -> Either ContextError Scalar
 runWithContext it = evalState (runExceptT it)
 
 push :: [Scalar] -> Context -> Context
-push xs (Context gr locals) = Context gr $ xs : locals
+push locals (Context gr _) = Context gr locals
 
 getLocal :: Int -> ResultT Scalar
 getLocal i = do
   (Context _ locals) <- get
 
   -- default to 0 if no local exists
-  return $ atDef 0 (head locals) i
+  return $ atDef 0 locals i
 
 shiftLocal :: ResultT Scalar
 shiftLocal = gets arg >>= \(x, st) -> do put st; return x
   where
     arg (Context gr []) = (0, Context gr [])
-    arg (Context gr ([] : xs)) = (0, Context gr ([] : xs))
-    arg (Context gr ((v : vs) : xs)) = (v, Context gr (vs : xs))
+    arg (Context gr (x : xs)) = (x, Context gr xs)
 
 buildConv :: [(Unit, Unit, Int)] -> ResultT (Maybe Conv)
 buildConv m = do

@@ -104,7 +104,7 @@ parseStatementOrExpr = runParserIO statementOrExpr
 
 runExpr :: Opts -> Scope -> Expr -> [Scalar] -> IO Scope
 runExpr opts scope expr xs =
-  case runWithContext (evalExpr expr) $ Context scope._convs [xs] of
+  case runWithContext (evalExpr expr) $ push xs (mkContext scope) of
     Left err -> throw err
     Right ans -> do
       printAns opts ans
