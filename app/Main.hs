@@ -6,10 +6,13 @@
 
 module Main (main) where
 
+import qualified Streamly.Data.Fold.Prelude as Fold
+import qualified Streamly.Data.Stream.Prelude as S
 import System.Console.CmdArgs
 import System.Console.Haskeline
 import System.Console.Haskeline.IO
 import System.Environment
+import System.IO
 import Text.Parsec
 import Text.Parsec.Token
 import Tn.Builtins
@@ -82,12 +85,15 @@ runParserIO parser scope s = either (throw . SyntaxError) return parseResult
   where
     parseResult = runParser parser scope "" s
 
-parseInputLine :: Scope -> IO [Scalar]
-parseInputLine scope = do
+parseInputLine :: Scope -> String -> IO [Scalar]
+parseInputLine scope line = do
   fs <- lookupEnv "FS" <&> fromMaybe ","
-  getLine >>= runParserIO (scalars fs <|> fail "invalid value") scope
+  runParserIO (scalars fs <|> fail "invalid value") scope line
   where
-    scalars fs = sepBy1 (whiteSpace lexer >> scalarParser) $ string fs
+    scalars fs = do
+      vals <- sepBy1 (whiteSpace lexer >> scalarParser) $ string fs
+      eof
+      return vals
 
 parseExpr :: Scope -> String -> IO Expr
 parseExpr = runParserIO $ do
@@ -102,28 +108,23 @@ parseStatementOrExpr = runParserIO statementOrExpr
     statement = statementParser >> getState <&> Left
     expr = exprParser <&> Right
 
-runExpr :: Opts -> Scope -> Expr -> [Scalar] -> IO Scope
-runExpr opts scope expr xs =
+runExpr :: Scope -> Expr -> [Scalar] -> IO Scalar
+runExpr scope expr xs =
   case runWithContext (evalExpr expr) $ push xs (mkContext scope) of
     Left err -> throw err
-    Right ans -> do
-      printAns opts ans
-      return scope
+    Right ans -> return ans
 
 runCmd :: Opts -> Scope -> String -> IO Scope
 runCmd opts scope s = do
   parseStatementOrExpr scope s >>= \case
     Left scope' -> return scope'
-    Right expr -> runExpr opts scope expr []
+    Right expr -> do runExpr scope expr [] >>= printAns opts; return scope
 
 prompt :: InputState -> IO String
 prompt is = fromMaybe (fail "Bye!") <$> queryInput is (getInputLine ">> ")
 
 contextHandler :: a -> (ContextError -> IO a)
 contextHandler x err = do print err; return x
-
-ioHandler :: IOException -> IO ()
-ioHandler _ = return ()
 
 repl :: Opts -> InputState -> Scope -> IO ()
 repl opts is scope = readEvalPrint >>= repl opts is
@@ -137,13 +138,24 @@ runInteractive opts scope is = do
   putStrLn motd
   bracketOnError is cancelInput $ flip (repl opts) scope
 
-runInputLoop :: Opts -> Scope -> String -> IO ()
-runInputLoop opts scope s = parseExpr scope s >>= processLoop
+runInputStream :: Opts -> Scope -> String -> IO ()
+runInputStream opts scope s = parseExpr scope s >>= processLoop
   where
-    processLoop expr = do
-      xs <- parseInputLine scope
-      void $ runExpr opts scope expr xs
-      processLoop expr
+    processLoop :: Expr -> IO ()
+    processLoop expr =
+      S.unfoldrM readLine ()
+        & S.filter (not . null)
+        & S.mapM (parseInputLine scope)
+        & S.mapM (runExpr scope expr)
+        & S.mapM (printAns opts)
+        & S.fold Fold.drain
+
+    readLine :: () -> IO (Maybe (String, ()))
+    readLine _ = do
+      atEnd <- isEOF
+      if atEnd
+        then return Nothing
+        else getLine >>= \line -> return $ Just (line, ())
 
 loadScripts :: [String] -> IO Scope
 loadScripts = foldM load mempty
@@ -166,4 +178,4 @@ main = do
   -- determine the run mode
   case opts.exprString of
     Nothing -> runInteractive opts scope $ initializeInput defaultSettings
-    Just s -> runInputLoop opts scope s `catch` ioHandler
+    Just expr -> runInputStream opts scope expr

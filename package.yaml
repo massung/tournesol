@@ -28,6 +28,7 @@ dependencies:
   - haskeline
   - parsec
   - safe
+  - streamly
 
 ghc-options:
   - -Wall

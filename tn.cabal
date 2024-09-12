@@ -58,6 +58,7 @@ library
     , parsec
     , rerebase
     , safe
+    , streamly
   default-language: Haskell2010
 
 executable tn-exe
@@ -78,6 +79,7 @@ executable tn-exe
     , parsec
     , rerebase
     , safe
+    , streamly
     , tn
   default-language: Haskell2010
 
@@ -102,5 +104,6 @@ test-suite tn-test
     , parsec
     , rerebase
     , safe
+    , streamly
     , tn
   default-language: Haskell2010

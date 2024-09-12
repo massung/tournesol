@@ -47,6 +47,13 @@ type ResultT = ExceptT ContextError (State Context)
 runWithContext :: ResultT Scalar -> Context -> Either ContextError Scalar
 runWithContext it = evalState (runExceptT it)
 
+runWithLocals :: ResultT Scalar -> [Scalar] -> ResultT Scalar
+runWithLocals it locals = do
+  (Context gr _) <- get
+
+  -- execute within a new context with different locals
+  either throwError return $ runWithContext it (Context gr locals)
+
 push :: [Scalar] -> Context -> Context
 push locals (Context gr _) = Context gr locals
 
