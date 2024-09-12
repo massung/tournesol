@@ -36,12 +36,12 @@ exprParser = buildExpressionParser exprTable exprTerm <|> (do eof; return Ans)
 exprTerm :: Parsec String Scope Expr
 exprTerm =
   exprParens
+    <|> exprShift
     <|> brackets lexer exprApply
     <|> (do reserved lexer "ans"; return Ans)
     <|> (do reserved lexer "true"; return $ Term 1)
     <|> (do reserved lexer "false"; return $ Term 0)
     <|> (scalarParser <&> Term)
-    <|> exprShift
 
 exprParens :: Parsec String Scope Expr
 exprParens = do

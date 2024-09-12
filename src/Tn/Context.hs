@@ -28,13 +28,17 @@ instance Show ContextError where
   show InvalidExponent = "invalid exponent (non-natural or has units)"
   show NoConversion = "no conversion found"
   show TypeMismatch = "type mismatch"
-  show (SyntaxError err) = printf "%s on line %d" msg line
+  show (SyntaxError err) =
+    case unwords [e | (Message e) <- errorMessages err] of
+      "" -> "syntax error"
+      errmsg ->
+        if null file
+          then errmsg
+          else printf "%s on line %d of %s" errmsg line file
     where
       pos = errorPos err
+      file = sourceName pos
       line = sourceLine pos
-      msg = case unwords [e | (Message e) <- errorMessages err] of
-        "" -> "syntax error"
-        errmsg -> errmsg
 
 instance Exception ContextError
 

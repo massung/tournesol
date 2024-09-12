@@ -85,7 +85,7 @@ runParserIO parser scope s = either (throw . SyntaxError) return parseResult
 parseInputLine :: Scope -> IO [Scalar]
 parseInputLine scope = do
   fs <- lookupEnv "FS" <&> fromMaybe ","
-  getLine >>= runParserIO (scalars fs) scope
+  getLine >>= runParserIO (scalars fs <|> fail "invalid value") scope
   where
     scalars fs = sepBy1 (whiteSpace lexer >> scalarParser) $ string fs
 
