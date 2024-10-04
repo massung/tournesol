@@ -15,7 +15,7 @@ unit acre "acres" = 43560 ft^2;
 # volume units
 unit pt "pints" = 568.26125 mL;
 unit floz "floor ounces" = 1 % 20 pt;
-unit cu "cups" = 1 % 2 pt;
+unit cup "cups" = 1 % 2 pt;
 unit qt "quarts" = 2 pt;
 unit gal "gallons" = 4 qt;
 
@@ -32,10 +32,12 @@ unit ton "tons" = 2240 lb;
 unit lbf "pounds of force" = slug ft / s^2;
 unit kip "kips" = 1000 lbf;
 
-# power units
-#unit hp "horsepower" = 550 lbf ft / s;
+# energy units
 unit BTU "british thermal units (IT)" = 1055.06 J;
 unit thrm "therms" = 100000 BTU;
+
+# power units
+#unit hp "horsepower" = 550 lbf ft / s;
 
 # pressure units
 #unit psi "pounds of force per square inch" = lbf / in^2;

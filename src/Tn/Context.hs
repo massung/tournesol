@@ -82,7 +82,7 @@ buildConv m = do
 convertUnits :: Scalar -> Units -> ResultT Scalar
 convertUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
 convertUnits (Scalar x (Just ux)) uy =
-  if not (ux ~= uy)
+  if baseDims ux /= baseDims uy
     then throwError DisparateUnits
     else
       let m = unitsToConv ux uy

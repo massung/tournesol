@@ -33,7 +33,7 @@ instance Show Unit where
 unitWithPrefix :: Unit -> String -> Unit
 unitWithPrefix (Unit sym base) p = Unit (intern $ p <> unintern sym) base
 
--- returns the fundamental dimensions of units; eg, N -> mass length / time^2
+-- returns the fundamental dimensions of units; eg, lbf -> mass length / time^2
 baseDims :: Units -> Dims Symbol
 baseDims = foldDims reduce mempty
   where
@@ -47,9 +47,16 @@ baseUnits = foldDims reduce mempty
   where
     reduce :: Units -> Unit -> Int -> Units
     reduce units u@(Unit _ (Base _)) e = units <> [(u, e)]
-    reduce units u@(Unit _ (Derived [(_, 1)])) e = units <> [(u, e)]
     reduce units (Unit _ (Derived u')) e = units <> baseUnits (u' *^ e)
 
+mapUnitDims :: Units -> Map (Dims Symbol) (Unit, Int)
+mapUnitDims = foldDims reduce mempty
+  where
+    reduce :: Map (Dims Symbol) (Unit, Int) -> Unit -> Int -> Map (Dims Symbol) (Unit, Int)
+    reduce m u@(Unit _ (Base dim)) e = M.insert (singleton dim) (u, e) m
+    reduce m u@(Unit _ (Derived units)) e = m <> [(baseDims units, (u, e))]
+
+-- maps base dimensions to a unit; eg. length -> ft
 baseUnitDims :: Units -> Map Symbol (Unit, Int)
 baseUnitDims = foldDims reduce mempty
   where
@@ -62,10 +69,6 @@ baseUnitDims = foldDims reduce mempty
 
     tally :: (Unit, Int) -> (Unit, Int) -> (Unit, Int)
     tally (a, an) (b, bn) = assert (a == b) (a, an + bn)
-
--- true if *all* dimensions are the same - units can be perfectly converted
-(~=) :: Units -> Units -> Bool
-(~=) a b = baseDims a == baseDims b
 
 -- verifies that each fundamental dimension only occurs once
 verifyUnits :: Units -> Bool

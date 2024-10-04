@@ -7,7 +7,7 @@ import qualified Data.Map.Strict as M
 import Data.Tuple.Extra
 
 newtype Dims a = Dims (M.Map a Int)
-  deriving (Eq)
+  deriving (Eq, Ord)
 
 instance (Ord a) => IsList (Dims a) where
   type Item (Dims a) = (a, Int)

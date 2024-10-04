@@ -139,7 +139,11 @@ runInteractive opts scope is = do
   bracketOnError is cancelInput $ flip (repl opts) scope
 
 runInputStream :: Opts -> Scope -> String -> IO ()
-runInputStream opts scope s = parseExpr scope s >>= processLoop
+runInputStream opts scope s = do
+  expr <- parseExpr scope s
+  if exprHasShift expr
+    then processLoop expr
+    else runExpr scope expr [] >>= printAns opts
   where
     processLoop :: Expr -> IO ()
     processLoop expr =

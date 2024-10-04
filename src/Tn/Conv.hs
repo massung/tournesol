@@ -12,7 +12,7 @@ type ConvGraph = AdjacencyMap (Maybe Conv) Unit
 --
 -- Each conversion edge consists of the destination vertex (Unit),
 -- an exponent ratio (from % to), and a function that performs the
--- conversion (\from -> to).
+-- conversion (from -> to).
 --
 -- For example, the conversions from m -> cm and cm^3 -> L are:
 --

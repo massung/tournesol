@@ -4,6 +4,7 @@
 module Tn.Expr
   ( Expr (..),
     exprParser,
+    exprHasShift,
   )
 where
 
@@ -29,6 +30,13 @@ data Expr
   | UnaryOp (Scalar -> ResultT Scalar) Expr
   | BinaryOp (Scalar -> Scalar -> ResultT Scalar) Expr Expr
   | Apply Function [Expr]
+
+exprHasShift :: Expr -> Bool
+exprHasShift Shift = True
+exprHasShift (Convert _ x) = exprHasShift x
+exprHasShift (UnaryOp _ x) = exprHasShift x
+exprHasShift (BinaryOp _ x y) = exprHasShift x || exprHasShift y
+exprHasShift _ = False
 
 exprParser :: Parsec String Scope Expr
 exprParser = buildExpressionParser exprTable exprTerm <|> (do eof; return Ans)
