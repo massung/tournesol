@@ -44,10 +44,10 @@ instance Exception ContextError
 
 type ResultT = ExceptT ContextError (State Context)
 
-runWithContext :: ResultT Scalar -> Context -> Either ContextError Scalar
+runWithContext :: ResultT a -> Context -> Either ContextError a
 runWithContext it = evalState (runExceptT it)
 
-runWithLocals :: ResultT Scalar -> [Scalar] -> ResultT Scalar
+runWithLocals :: ResultT a -> [Scalar] -> ResultT a
 runWithLocals it locals = do
   (Context gr _) <- get
 
@@ -70,6 +70,12 @@ shiftLocal = gets arg >>= \(x, st) -> do put st; return x
     arg (Context gr []) = (0, Context gr [])
     arg (Context gr (x : xs)) = (x, Context gr xs)
 
+-- Converting units uses the following algorithm:
+--
+--   1. Convert to base units
+--   2. Convert between base units using the conversion graph
+--   3. Convert from base units to the desired units
+
 buildConv :: [(Unit, Unit, Int)] -> ResultT (Maybe Conv)
 buildConv m = do
   (Context gr _) <- get
@@ -79,27 +85,31 @@ buildConv m = do
     Just (c : cs) -> return $ Just (foldl' (<>) c cs)
     _ -> return Nothing
 
-convertUnits :: Scalar -> Units -> ResultT Scalar
-convertUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
-convertUnits (Scalar x (Just ux)) uy =
+convertToUnits :: Scalar -> Units -> ResultT Scalar
+convertToUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
+convertToUnits (Scalar x (Just ux)) uy =
   if baseDims ux /= baseDims uy
     then throwError DisparateUnits
     else
-      let m = unitsToConv ux uy
-       in if null m
-            then return $ Scalar x (Just uy)
+      let (rx, ux') = baseUnits ux
+          (ry, uy') = baseUnits uy
+
+          -- find the conversion from ux' -> uy'
+          toConv = unitsToConv ux' uy'
+       in if null toConv
+            then return $ Scalar (x * rx / ry) (Just uy)
             else
-              buildConv m >>= \case
-                Just conv -> return $ Scalar (applyConv x conv) (Just uy)
+              buildConv toConv >>= \case
+                Just conv -> return $ Scalar (applyConv (x * rx) conv / ry) (Just uy)
                 _ -> throwError NoConversion
 
 convertSharedUnits :: Scalar -> Units -> ResultT Scalar
 convertSharedUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
 convertSharedUnits s@(Scalar x (Just ux)) uy = do
-  let m = unitsToConv ux uy
-   in if null m
-        then return s -- Scalar x (ux <> uy)
+  let toConv = unitsToConv ux uy
+   in if null toConv
+        then return s
         else
-          buildConv m >>= \case
-            Just conv -> return $ Scalar (applyConv x conv) (Just $ convUnits m ux)
-            _ -> throwError NoConversion
+          buildConv toConv >>= \case
+            Just conv -> return $ Scalar (applyConv x conv) (Just $ convUnits toConv ux)
+            _ -> throw NoConversion

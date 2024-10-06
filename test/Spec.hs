@@ -53,17 +53,17 @@ testUnits = do
 
   describe "Base units" $ do
     it "m -> m" $ do
-      baseUnits "m" `shouldBe` "m"
+      baseUnits "m" `shouldBe` (1, "m")
     it "J -> kg m^2/s^2" $ do
-      baseUnits "J" `shouldBe` "kg m^2/s^2"
+      baseUnits "J" `shouldBe` (1, "kg m^2/s^2")
     it "lbf -> slug ft/s" $ do
-      baseUnits "lbf" `shouldBe` "slug ft/s^2"
+      baseUnits "lbf" `shouldBe` (1, "slug ft/s^2")
     it "mph -> mi/hr" $ do
-      baseUnits "mph" `shouldBe` "mi/hr"
+      baseUnits "mph" `shouldBe` (1, "mi/hr")
 
   describe "Map dimensions to units" $ do
     it "m -> ([length], (m, 1))" $ do
-      baseUnitDims "m" `shouldBe` [("[length]", ("m", 1))]
+      mapBaseUnitDims "m" `shouldBe` [("[length]", ("m", 1))]
 
 testConversions :: SpecWith ()
 testConversions = do
@@ -97,6 +97,7 @@ testConversions = do
 
   describe "Compound conversions" $ do
     testExpr "1 mi/hr : in/min" "1056 in/min"
+    testExpr "10 hp ~= 7456.9988186291 W" 1
 
   describe "Derived conversions" $ do
     testExpr "2 L : um^3" "2000000000000000 um^3"

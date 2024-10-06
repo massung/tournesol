@@ -18,6 +18,8 @@ module Tn.Debug
     module Tn.Unit,
     evalWithScope,
     evalWithDefaultScope,
+    runWithScope,
+    runWithDefaultScope,
   )
 where
 
@@ -41,10 +43,16 @@ evalWithScope :: String -> Scope -> Either ContextError Scalar
 evalWithScope s scope =
   case runParser exprParser scope "" s of
     Left err -> Left $ SyntaxError err
-    Right expr -> runWithContext (evalExpr expr) (mkContext scope)
+    Right expr -> runWithScope (evalExpr expr) scope
 
 evalWithDefaultScope :: String -> Either ContextError Scalar
 evalWithDefaultScope s = evalWithScope s defaultScope
+
+runWithScope :: ResultT a -> Scope -> Either ContextError a
+runWithScope r scope = runWithContext r $ mkContext scope
+
+runWithDefaultScope :: ResultT a -> Either ContextError a
+runWithDefaultScope r = runWithScope r defaultScope
 
 instance IsString Scalar where
   fromString s = case runParser scalarParser defaultScope "" s of

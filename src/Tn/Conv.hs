@@ -10,46 +10,42 @@ type ConvGraph = AdjacencyMap (Maybe Conv) Unit
 
 -- Conversion edge data
 --
--- Each conversion edge consists of the destination vertex (Unit),
--- an exponent ratio (from % to), and a function that performs the
--- conversion (from -> to).
+-- Each conversion edge consists of the destination vertex (Unit)
+-- and a function that performs the conversion (from -> to).
 --
--- For example, the conversions from m -> cm and cm^3 -> L are:
+-- For example, the conversions from m -> cm and cm -> m are:
 --
---   Conv (m, 1 % 1) (* 100)
---   Conv (L, 3 % 1) (/ 1000)
-data Conv = Conv (Unit, Rational) (Rational -> Rational)
+--   Conv m (* 100)
+--   Conv cm (/ 1000)
+data Conv = Conv Unit (Rational -> Rational)
 
 instance Eq Conv where
-  (==) (Conv (a, _) _) (Conv (b, _) _) = a == b
+  (==) (Conv a _) (Conv b _) = a == b
 
 instance Ord Conv where
-  (<=) (Conv (a, _) _) (Conv (b, _) _) = a <= b
+  (<=) (Conv a _) (Conv b _) = a <= b
 
 instance Show Conv where
-  show (Conv (a, n) _) =
-    if denominator n == 1
-      then printf "Conv to %s" (show a)
-      else printf "Conv to %s^%d" (show a) (denominator n)
+  show (Conv a _) = printf "Conv to %s" (show a)
 
 instance Semigroup Conv where
-  (<>) (Conv (to, nTo) f) (Conv (_, _) g) = Conv (to, nTo) (f . g)
+  (<>) (Conv to f) (Conv _ g) = Conv to (f . g)
 
 -- apply a conversion function
 applyConv :: Rational -> Conv -> Rational
 applyConv n (Conv _ f) = f n
 
 -- create a pair of linear conversions
-linearConvs :: Unit -> (Unit, Rational) -> Rational -> ConvGraph
-linearConvs from (to, n) r =
-  let a = edge (Just $ Conv (to, n) (/ r)) from to
-      b = edge (Just $ Conv (from, recip n) (* r)) to from
+linearConvs :: Unit -> Unit -> Rational -> ConvGraph
+linearConvs from to r =
+  let a = edge (Just $ Conv to (/ r)) from to
+      b = edge (Just $ Conv from (* r)) to from
    in overlay a b
 
 derivedConvs :: [(String, String, Rational)] -> Unit -> ConvGraph
 derivedConvs prefixes u = overlays $ fmap convs prefixes
   where
-    convs (_, p, r) = linearConvs u (unitWithPrefix u p, 1) r
+    convs (_, p, r) = linearConvs u (unitWithPrefix u p r) r
 
 -- return a metric conversion graph given the fundamental unit
 siConvs :: Unit -> ConvGraph
@@ -69,39 +65,29 @@ findConv from to gr = foldl1' (<>) <$> findConvPath from to gr
 
 -- searches the graph and returns a path of conversions
 findConvPath :: (Unit, Int) -> Unit -> ConvGraph -> Maybe [Conv]
-findConvPath (from, n) = bfs [[Conv (from, toRational n) id]] (S.singleton from)
+findConvPath (from, e) = bfs [[Conv from id]] (S.singleton from) e
 
 -- breadth first path search
-bfs :: [[Conv]] -> Set Unit -> Unit -> ConvGraph -> Maybe [Conv]
-bfs [] _ _ _ = Nothing
-bfs q s to gr = find ((== to) . fst . goal) q <|> bfs q' s' to gr
+bfs :: [[Conv]] -> Set Unit -> Int -> Unit -> ConvGraph -> Maybe [Conv]
+bfs [] _ _ _ _ = Nothing
+bfs q s e to gr = find ((== to) . goal) q <|> bfs q' s' e to gr
   where
-    goal :: [Conv] -> (Unit, Rational)
+    goal :: [Conv] -> Unit
     goal [] = error "Unreachable; empty search path added to BFS!"
     goal (Conv u _ : _) = u
 
-    -- Return all possible branches of this path. This takes the conversion
-    -- exponent into account with the supplied exponent of the original unit.
-    --
-    -- For example, when converting from cm -> L, it's only possible to
-    -- convert in multiples of cm^3. Example conversions:
-    --
-    --   L -> cm^3 = Conv (cm, 1 % 3) (* 1000)
-    --   cm^3 -> L = Conv (L, 3 % 1) (/ 1000)
-
     walk :: [Conv] -> [[Conv]]
     walk path =
-      let (from, n) = goal path
+      let from = goal path
           steps = S.toList $ S.difference (postSet from gr) s
           convs = [edgeLabel from step gr | step <- steps]
-       in [r' c n : path | Just c@(Conv (_, e) _) <- convs, numerator n `mod` numerator e == 0]
+       in [expConv c : path | Just c <- convs]
+
+    expConv :: Conv -> Conv
+    expConv (Conv u f) =
+      let f' = foldl' (.) f $ replicate (abs e - 1) f
+       in Conv u $ if e >= 0 then f' else (/ f' 1)
 
     -- next queue with updated paths
     q' = concatMap walk q
-    s' = foldl (flip S.insert) s [fst $ goal p | p <- q']
-
-    -- exponentiate the conversion function
-    r' (Conv (u, e) r) n =
-      let i = abs $ numerator n `div` numerator e
-          f = foldl' (.) r $ replicate (fromInteger $ i - 1) r
-       in Conv (u, n / e) $ if n * e >= 0 then f else (/ f 1)
+    s' = foldl (flip S.insert) s [goal p | p <- q']

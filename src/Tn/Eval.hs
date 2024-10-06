@@ -25,7 +25,7 @@ evalExpr (Apply f xs) = evalApply f xs
 evalConvert :: Expr -> Units -> ResultT Scalar
 evalConvert x units = do
   x' <- evalExpr x
-  convertUnits x' units
+  convertToUnits x' units
 
 evalUnaryOp :: (Scalar -> ResultT Scalar) -> Expr -> ResultT Scalar
 evalUnaryOp f x = evalExpr x >>= f

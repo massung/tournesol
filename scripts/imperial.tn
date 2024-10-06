@@ -13,7 +13,7 @@ unit rod "rods" = 25 link;
 unit acre "acres" = 43560 ft^2;
 
 # volume units
-unit pt "pints" = 568.26125 mL;
+unit pt "pints" = 473.1765 mL;
 unit floz "floor ounces" = 1 % 20 pt;
 unit cup "cups" = 1 % 2 pt;
 unit qt "quarts" = 2 pt;
@@ -37,7 +37,7 @@ unit BTU "british thermal units (IT)" = 1055.06 J;
 unit thrm "therms" = 100000 BTU;
 
 # power units
-#unit hp "horsepower" = 550 lbf ft / s;
+unit hp "horsepower" = 550 lbf ft / s;
 
 # pressure units
 #unit psi "pounds of force per square inch" = lbf / in^2;

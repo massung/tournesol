@@ -31,5 +31,5 @@ shiftArg x@(Scalar i Nothing) UntypedInteger =
   if denominator i == 1
     then return x
     else throwError TypeMismatch
-shiftArg x (Typed u) = convertUnits x u
+shiftArg x (Typed u) = convertToUnits x u
 shiftArg _ _ = throwError TypeMismatch

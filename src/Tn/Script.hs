@@ -119,7 +119,7 @@ unitBase name = do
 
 unitAlias :: Symbol -> Parsec String Scope ()
 unitAlias name = do
-  u <- unitsParser <&> Unit name . Derived
+  u <- unitsParser <&> Unit name . Derived 1
   scope <- getState
 
   -- register the unit in the scope
@@ -127,23 +127,32 @@ unitAlias name = do
 
 unitConv :: Symbol -> Parsec String Scope ()
 unitConv name = do
-  x <- comptimeExpr
+  Scalar r units <- comptimeExpr
   scope <- getState
 
-  -- extract the linear ratio, units, and exponent
-  (r, (to, e)) <- case x of
-    Scalar r (Just [(to, e)]) -> return (r, (to, e))
-    _ -> fail "invalid conversion"
+  -- A "simple" unit conversion is one that converts from a
+  -- one dimension to the same dimension (e.g., time -> time).
 
-  -- create the unit and conversion graph
-  let u = Unit name $ Derived [(to, abs e)]
-      g =
-        if e > 0
-          then linearConvs u (to, 1 % toInteger e) $ recip r
-          else linearConvs u (to, abs $ toInteger e % 1) r
+  -- If this is a "simple" units conversion (e.g., ft -> m)
+  -- then create a new Unit with the same Base dimensions as
+  -- the unit being converted to.
+  --
+  -- If this is a "compound" conversion (e.g., L -> cm^3 or
+  -- BTU -> J), then create a Derived unit with no conversion.
 
-  -- add the unit and conversions to the scope
+  (u, g) <- case units of
+    Just [(to@(Unit _ (Base dim)), 1)] -> return $ makeSimpleConvTo to (Base dim) r
+    Just to -> return $ makeDerivedConvTo to r
+    _ -> fail "invalid units"
+
+  -- add to the scope
   either fail (putState . declConvs g) $ declUnit u scope
+  where
+    makeSimpleConvTo :: Unit -> Base -> Rational -> (Unit, ConvGraph)
+    makeSimpleConvTo to base r = let u = Unit name base in (u, linearConvs u to $ recip r)
+
+    makeDerivedConvTo :: Units -> Rational -> (Unit, ConvGraph)
+    makeDerivedConvTo to r = (Unit name $ Derived r to, G.empty)
 
 parseDim :: Parsec String Scope Base
 parseDim = do
