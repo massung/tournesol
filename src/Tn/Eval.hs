@@ -37,12 +37,12 @@ evalBinaryOp f x y = do
   f x' y'
 
 evalApply :: Function -> [Expr] -> ResultT Scalar
-evalApply f xs = do
+evalApply (Function args expr) xs = do
   xs' <- sequence [evalExpr x | x <- xs]
-  args <- mapArgs xs' f._args
+  args' <- mapArgs xs' args
 
   -- push the arguments onto a new context and evaluate
-  ans <- get <&> runWithContext f._body . push args
+  ans <- get <&> runWithContext expr . push args'
 
   -- return the answer in the current context
   either throwError return ans

@@ -27,7 +27,7 @@ tn '1+2'
 
 # more complex expressions with unit conversions
 tn '300 W * 2 hr : BTU'
-tn '100 mL + 1 c to in^3'
+tn '100 mL + 1 cup : in^3'
 
 # shift (_) to pull values from stdin
 tn '_ / _ in' '3 yd^2' 4
@@ -41,25 +41,30 @@ tn '[cos 200 grad]'
 
 ## Scripts and Custom Functions
 
-You can define your own units and functions in scripts:
+You can define your own dimensions and units in scripts:
 
 ```
-# agricultural units
-system ag
+dim luminosity;
 
-ag units 1363827 bg = 12500 L
-ag units 1 bu = 0.323 bg
+# define a fundamental unit
+unit cp "candlepower" = base luminosity;
+```
 
-# some functions
-function transferRate [storage; duration] = _/_ to MB/s
-function areaOfCircle [length] = [pi] * _^2
+It is also possible to simply define a new unit as its own dimensions. This can be useful for solving custom problems.
+
+```
+# cars.tn
+
+unit car;
+unit usd;
+
+const pricePerCar = 10000 usd/car;
 ```
 
 And now you can load the script and use it in your calculations:
 
 ```bash
-tn -f myfuncs.tn '[transferRate 10 GB; 20 min]'
-tn -f myfuncs.tn '[areaOfCircle 2 ft]'
+tn -f cars.tn '3 car * [pricePerCar]'
 ```
 
 ## Interactive Mode
@@ -70,37 +75,37 @@ It's also possible to simply run in interactive mode:
 $ tn
 Tournesol v1.0.0, (c) Jeffrey Massung
 >> 1 + 1
-== 2.00
->> _ V * 0.5 A * 2 min
-== 2.00 V A min
->> _ J
-== 120.00 J
+2
+>> 10 V * 0.5 A * 2 min
+600 V A s
+>> 3 hp : W
+
 ```
 
 ## Dimensions and Units
 
-The following table of all (base) units and dimensions are understood by Tournesol. Units prefixed with a `-` may also be prefixed with the SI prefixes from atto- to exa- (see: [https://physics.nist.gov/cuu/Units/prefixes.html](https://physics.nist.gov/cuu/Units/prefixes.html)).
+The following table of all units and fundamental dimensions are understood by Tournesol. Units prefixed with a `-` may also be prefixed with the SI prefixes from atto- to exa- (see: [https://physics.nist.gov/cuu/Units/prefixes.html](https://physics.nist.gov/cuu/Units/prefixes.html)).
 
 | Dimension | Base dimensions | Units
 |-|-|-
 | angle | `[angle]` | rad, grad, deg, rev, turn
 | area | `[length^2]` | ha, acre
-| duration | `[duration]` | -s, min, hr, day
-| capacitance | `[current^2;duration^4;length^-2;mass^-1]` | -F
-| charge | `[current;duration]` | -C
+| capacitance | `[current^2;time^4;length^-2;mass^-1]` | -F
+| charge | `[current;time]` | -C
 | current | `[current]` | -A
-| energy | `[mass;length^2;duration^-2]` | -J, -eV, BTU, thm
-| force | `[mass;length;duration^-2]` | -N, lbf, pond
-| frequency | `[duration^-1]` | -hz
+| energy | `[mass;length^2;time^-2]` | -J, -eV, BTU, thm
+| force | `[mass;length;time^-2]` | -N, lbf, pond
+| frequency | `[time^-1]` | -hz
 | length | `[length]` | -m, mil, in, h, ft, yd, ftm, ch, fur, mi, lea, cable, nmi, link, rod, pc, au, ly
 | mass | `[mass]` | -g, oz, lb, st, cwt, t
-| power | `[mass;length^2;duration^-3]` | -W, hp
-| pressure | `[mass;length^-1;duration^-2]` | -Pa, psi, bar
-| resistance | `[mass;length^2;current^-4;duration^-3]` | -O
-| speed | `[length;duration^-1]` | kph, mph, kn
+| power | `[mass;length^2;time^-3]` | -W, hp
+| pressure | `[mass;length^-1;time^-2]` | -Pa, psi, bar
+| resistance | `[mass;length^2;current^-4;time^-3]` | -O
+| speed | `[length;time^-1]` | kph, mph, kn
 | storage | `[storage]` | -B, -b
-| voltage | `[mass;length^2;current^-1;duration^-3]` | -V
-| volume | `[length^3]` | -L, tsp, tbp, floz, c, pt, qt, gal
+| time | `[time]` | s, min, hr, day, week
+| voltage | `[mass;length^2;current^-1;time^-3]` | -V
+| volume | `[length^3]` | -L, tsp, tbp, floz, cup, pt, qt, gal
 
 _NOTE: Storage units (byte and bit) use base-2 SI prefixes (e.g. MB - megabyte - is 1048576 bytes, not 1000000)._
 
@@ -108,21 +113,28 @@ _NOTE: Storage units (byte and bit) use base-2 SI prefixes (e.g. MB - megabyte -
 
 ***Why is `1/2ft` equal to `0.5 ft^-1` and not `0.5 ft`?***
 
-Math operators have a lower precedence than unit assignment. Use parenthesis if needed: `(1/2) ft`.
+Math operators have a lower precedence than unit assignment. You can either use parenthesis or the `%` division operator which has a higher precedence:
 
-***Why does `[cos [pi]]` error with `wrong dimensions; got [] expected [angle]`?***
+```
+>> 1/2 ft
+0.5 ft^-1
 
-The constant `[pi]` has no units as must be converted to radians (e.g. `[cos [pi] : rad]`).
+>> (1/2) ft
+0.5 ft
+
+>> 1%2 ft
+0.5 ft
+```
 
 ## Built-in Functions
 
 The following functions are built-in and available for use:
 
-```bash
+```
 # -------------------------------------------------
 # Conditional functions
 
-function if [any; any; any]
+function if [any:test; any:then; any:else]
 
 # -------------------------------------------------
 # Constants functions
@@ -132,12 +144,12 @@ function pi []
 # -------------------------------------------------
 # Trigometric functions
 
-function sin [angle]
-function cos [angle]
-function tan [angle]
-function sinh [angle]
-function cosh [angle]
-function tanh [angle]
+function sin [rad]
+function cos [rad]
+function tan [rad]
+function sinh [rad]
+function cosh [rad]
+function tanh [rad]
 function asin [none]
 function acos [none]
 function atan [none]
@@ -161,7 +173,10 @@ function round [any]
 # -------------------------------------------------
 # Geometry functions
 
-function areaOfCircle [length:r]
+function circumference [dim length:r]
+function perimeter [dim length:b; dim length:h]
+
+function areaOfCircle [dim length:r]
 function areaOfRect [length:b;length:h]
 function areaOfTriangle [length:b;length:h]
 
@@ -173,9 +188,4 @@ function volumeOfCube [length]
 function volumeOfSquarePyramid [length:b;length:h]
 function volumeOfTetrahedron [length]
 function volumeOfTorus [length:r;length:R]
-
-# -------------------------------------------------
-# Storage functions
-
-function transferRate [storage; duration]
 ```

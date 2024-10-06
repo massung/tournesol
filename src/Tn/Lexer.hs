@@ -4,9 +4,7 @@
 module Tn.Lexer where
 
 import Text.Parsec
-import Text.Parsec.Expr
 import Text.Parsec.Token
-import Tn.Dims
 import Tn.Scope
 import Prelude hiding (Infix, try, (<|>))
 
@@ -23,7 +21,7 @@ lexer = makeTokenParser lang
           identLetter = letter,
           opStart = oneOf "^+-*/<>=~%",
           opLetter = oneOf "^+-*/<>=",
-          reservedNames = ["_", "ans", "base", "binary", "const", "dim", "english", "function", "imperial", "si", "unit"],
+          reservedNames = ["_", "ans", "binary", "const", "dim", "english", "function", "imperial", "si", "unit"],
           reservedOpNames = ["+", "-", "*", "/", "^", "=", "==", "~=", "<", ">", "<=", ">=", "<>"],
           caseSensitive = True
         }
@@ -43,12 +41,3 @@ signParser = option 1 (neg <|> pos)
   where
     neg = reservedOp lexer "-" >> return (-1)
     pos = reservedOp lexer "+" >> return 1
-
-unitsOpTable :: (Ord a) => OperatorTable String Scope Identity (Dims a)
-unitsOpTable =
-  [ [ Infix (do unitsOp "*"; return (<>)) AssocLeft,
-      Infix (do unitsOp "/"; return (</>)) AssocLeft
-    ]
-  ]
-  where
-    unitsOp op = try (do reservedOp lexer op; notFollowedBy (integer lexer))

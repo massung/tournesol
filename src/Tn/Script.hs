@@ -60,6 +60,7 @@ statementParser =
   dimDecl
     <|> constDecl
     <|> unitDecl
+    <|> functionDecl
     <|> systemUnits
 
 -- dim [base] <name>
@@ -68,7 +69,7 @@ dimDecl = do
   reserved lexer "dim"
 
   -- fundamental dimension name
-  name <- identifier lexer <&> intern . ("[" ++) . (++ "]")
+  name <- identifier lexer <&> intern
 
   -- register the base dimension in the scope
   getState <&> declDim name >>= \case
@@ -108,7 +109,7 @@ unitDecl = do
 
 unitBase :: Symbol -> Parsec String Scope ()
 unitBase name = do
-  reserved lexer "base"
+  reserved lexer "dim"
 
   -- dimension
   base <- parseDim
@@ -141,22 +142,49 @@ unitConv name = do
   -- BTU -> J), then create a Derived unit with no conversion.
 
   (u, g) <- case units of
-    Just [(to@(Unit _ (Base dim)), 1)] -> return $ makeSimpleConvTo to (Base dim) r
+    Just [(to@(Unit _ (Base dim)), n)] -> return $ makeSimpleConvTo to n (Base dim) r
     Just to -> return $ makeDerivedConvTo to r
     _ -> fail "invalid units"
 
   -- add to the scope
   either fail (putState . declConvs g) $ declUnit u scope
   where
-    makeSimpleConvTo :: Unit -> Base -> Rational -> (Unit, ConvGraph)
-    makeSimpleConvTo to base r = let u = Unit name base in (u, linearConvs u to $ recip r)
+    makeSimpleConvTo :: Unit -> Int -> Base -> Rational -> (Unit, ConvGraph)
+    makeSimpleConvTo to 1 base r = let u = Unit name base in (u, linearConvs u to $ recip r)
+    makeSimpleConvTo to (-1) base r = let u = Unit name base in (u, linearConvs u to r)
+    makeSimpleConvTo to n _ r = makeDerivedConvTo [(to, n)] r
 
     makeDerivedConvTo :: Units -> Rational -> (Unit, ConvGraph)
     makeDerivedConvTo to r = (Unit name $ Derived r to, G.empty)
 
+functionDecl :: Parsec String Scope ()
+functionDecl = do
+  reserved lexer "function"
+
+  -- parse the name of the function and the arguments to it
+  _name <- identifier lexer
+  _args <- brackets lexer $ sepBy parseFunctionParam (lexeme lexer $ char ';')
+
+  -- assignment and the expression
+  reservedOp lexer "="
+  _expr <- exprParser
+
+  -- TODO: define the function
+  return ()
+
+parseFunctionParam :: Parsec String Scope (Maybe Symbol, ArgType)
+parseFunctionParam = do
+  argType <- option Untyped (unitsParser <&> Typed)
+  -- TODO: allow for a generic dim?
+
+  -- parse an optional local name
+  argName <- optionMaybe $ reservedOp lexer ":" >> identifier lexer <&> intern
+
+  return (argName, argType)
+
 parseDim :: Parsec String Scope Base
 parseDim = do
-  dim <- identifier lexer <&> intern . ("[" ++) . (++ "]")
+  dim <- identifier lexer <&> intern
   base <- getState <&> M.lookup dim . _dims
 
   -- ensure the dimension is registered

@@ -5,10 +5,10 @@ dim mass;
 dim time;
 
 # base units
-unit rad "radians" = base angle;
-unit m "meters" = base length;
-unit g "grams" = base mass;
-unit s "seconds" = base time;
+unit rad "radians" = dim angle;
+unit m "meters" = dim length;
+unit g "grams" = dim mass;
+unit s "seconds" = dim time;
 
 # declare si conversions
 si m;
@@ -38,10 +38,15 @@ const pi = 245850922 % 78256779;
 const e = [pi] * 53035 % 61294;
 const c = 299792458 m/s;
 
+# electron volts
+unit eV "electronvolts" = 801088317 % 5000000000000000000000000000 J;
+si eV;
+
 # time units
 unit min "minutes" = 60 s;
 unit hr "hours" = 60 min;
 unit day "days" = 24 hr;
+unit week "weeks" = 7 day;
 
 # angle units
 unit deg = 180 / ([pi] : rad);

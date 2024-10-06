@@ -1,0 +1,18 @@
+# perimeter functions
+function circumference [dim length:r] = 2 * _ * [pi]
+function perimeter [dim length:b; dim length:h] = 2 * _ + 2 * _
+
+# area functions
+function areaOfSquare [dim length:l] = _^2
+function areaOfCircle [dim length:r] = [pi] * _^2
+function areaOfRect [dim length:b; dim length:h] = _ * _
+
+# volume functions
+function volumeOfSphere [dim length:r] = 4%3 * [pi] * _^3
+function volumeOfCylinder [dim length:r; dim length:h] = [pi] * _^2 * _
+function volumeOfPrism [dim length:b; dim length:h; dim length:d] = _ * _ * _
+function volumeOfTrianglePrism [dim length:b; dim length:h; dim length:d] = _ * _ * _ / 2
+function volumeOfCube [dim length] = _^3
+function volumeOfSquarePyramid [dim length:b; dim length:h] = _^2 * _ / 3
+function volumeOfTetrahedron [dim length:l] = _^3 * [sqrt 2] / 12
+function volumeOfTorus [dim length:innerR; dim length:outerR] = 2 * [pi]^2 * _^2 * _

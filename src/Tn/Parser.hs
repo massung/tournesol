@@ -35,6 +35,15 @@ dimParser = do
     Just dim -> return dim
     _ -> fail $ "unknown dimensions " ++ s ++ " at " ++ show pos
 
+unitsOpTable :: (Ord a) => OperatorTable String Scope Identity (Dims a)
+unitsOpTable =
+  [ [ Infix (do unitsOp "*"; return (<>)) AssocLeft,
+      Infix (do unitsOp "/"; return (</>)) AssocLeft
+    ]
+  ]
+  where
+    unitsOp op = try (do reservedOp lexer op; void $ lookAhead unitsTerm)
+
 unitsParser :: Parsec String Scope Units
 unitsParser = do
   units <- buildExpressionParser unitsOpTable (mconcat <$> many1 unitsTerm)

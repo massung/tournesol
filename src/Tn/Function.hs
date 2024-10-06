@@ -1,20 +1,22 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Tn.Function where
 
 import Tn.Context
+import Tn.Dims
 import Tn.Scalar
+import Tn.Symbol
 import Tn.Unit
 import Prelude hiding (Any, Arg)
 
-data Function = Function
-  { _args :: [ArgType],
-    _body :: ResultT Scalar
-  }
+data Function = Function [ArgType] (ResultT Scalar)
 
 data ArgType
   = Any
   | Untyped
   | UntypedInteger
   | Typed Units
+  | TypedDims (Dims Symbol)
 
 mapArgs :: [Scalar] -> [ArgType] -> ResultT [Scalar]
 mapArgs [] [] = return []
@@ -32,4 +34,8 @@ shiftArg x@(Scalar i Nothing) UntypedInteger =
     then return x
     else throwError TypeMismatch
 shiftArg x (Typed u) = convertToUnits x u
+shiftArg x (TypedDims dims) =
+  if maybe True ((== dims) . baseDims) (scalarUnits x)
+    then return x
+    else throwError TypeMismatch
 shiftArg _ _ = throwError TypeMismatch

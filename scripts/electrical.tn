@@ -2,11 +2,11 @@
 dim current;
 
 # declare units
-unit A "amperes" = base current;
-unit C "coulombs" = s A;
-unit F "farads" = s^4 A^2 / kg m^2;
-unit V "volts" = kg m^2 / s^3 A;
-unit O "ohms" = kg m^2 / s^3 A^2;
+unit A "amperes" = dim current;
+unit C "coulombs" = A s;
+unit F "farads" = A^2 s^4 / kg m^2;
+unit V "volts" = kg m^2 / A s^3;
+unit O "ohms" = kg m^2 / A^2 s^3;
 
 # metric unit conversions
 si A;

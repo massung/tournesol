@@ -36,6 +36,9 @@ maritimeScript = $(embedStringFile "scripts/maritime.tn")
 storageScript :: String
 storageScript = $(embedStringFile "scripts/storage.tn")
 
+geometryScript :: String
+geometryScript = $(embedStringFile "scripts/geometry.tn")
+
 defaultFunctions :: Map Symbol Function
 defaultFunctions =
   [ ("if", Function [Any, Any, Any] _if),
@@ -64,7 +67,7 @@ defaultFunctions =
   ]
   where
     rads :: Units
-    rads = [(Unit "rad" $ Base "[angle]", 1)]
+    rads = [(Unit "rad" $ Base "angle", 1)]
 
 defaultScope :: Scope
 defaultScope =
