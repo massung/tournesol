@@ -3,6 +3,7 @@
 module Tn.Unit where
 
 import qualified Data.Map as M
+import Data.Tuple.Extra
 import Tn.Dims
 import Tn.Symbol
 import Prelude hiding (singleton)
@@ -70,8 +71,11 @@ mapBaseUnitDims = foldDims reduce mempty
 
 -- verifies that each fundamental dimension only occurs once
 verifyUnits :: Units -> Bool
-verifyUnits = all (== 1) . foldDims reduce mempty . snd . baseUnits
+verifyUnits = verify -- TODO: uncurry (&&) . both verify . partitionDims
   where
+    verify :: Units -> Bool
+    verify = all (== 1) . foldDims reduce mempty . snd . baseUnits
+
     reduce :: Map Symbol Int -> Unit -> Int -> Map Symbol Int
     reduce m u _ = foldDims count m . baseDims . singleton $ u
 
