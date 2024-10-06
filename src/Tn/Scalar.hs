@@ -90,18 +90,6 @@ instance RealFrac Scalar where
 invalidScalar :: Scalar
 invalidScalar = Scalar infinity Nothing
 
--- convertToBaseUnits :: Scalar -> Scalar
--- convertToBaseUnits (Scalar x units) =
---   case units <&> baseUnits of
---     Just (r, u) -> Scalar (x * r) $ Just u
---     _ -> Scalar x Nothing
-
--- convertFromBaseUnits :: Scalar -> Units -> Scalar
--- convertFromBaseUnits (Scalar x Nothing) to = Scalar x $ Just to
--- convertFromBaseUnits (Scalar x (Just units)) to =
---   let (r, u') = baseUnits to
---    in assert (units == u') (Scalar (x / r) $ Just to)
-
 scalarUnits :: Scalar -> Maybe Units
 scalarUnits (Scalar _ u) = u
 

@@ -44,12 +44,12 @@ testUnits = do
       "g" `shouldNotBe` ("m" :: Unit)
 
   describe "Base dimensions" $ do
-    it "ft -> [length]" $ do
-      baseDims "ft" `shouldBe` [("[length]", 1)]
-    it "J -> [mass][length]^2/[time]^2" $ do
-      baseDims "J" `shouldBe` [("[mass]", 1), ("[length]", 2), ("[time]", -2)]
-    it "L^2 -> [length]^6" $ do
-      baseDims "L^2" `shouldBe` [("[length]", 6)]
+    it "ft -> length" $ do
+      baseDims "ft" `shouldBe` [("length", 1)]
+    it "J -> mass length^2/time^2" $ do
+      baseDims "J" `shouldBe` [("mass", 1), ("length", 2), ("time", -2)]
+    it "L^2 -> length^6" $ do
+      baseDims "L^2" `shouldBe` [("length", 6)]
 
   describe "Base units" $ do
     it "m -> m" $ do
@@ -63,7 +63,7 @@ testUnits = do
 
   describe "Map dimensions to units" $ do
     it "m -> ([length], (m, 1))" $ do
-      mapBaseUnitDims "m" `shouldBe` [("[length]", ("m", 1))]
+      mapBaseUnitDims "m" `shouldBe` [("length", ("m", 1))]
 
 testConversions :: SpecWith ()
 testConversions = do
