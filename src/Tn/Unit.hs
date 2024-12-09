@@ -71,7 +71,7 @@ mapBaseUnitDims = foldDims reduce mempty
 
 -- verifies that each fundamental dimension only occurs once
 verifyUnits :: Units -> Bool
-verifyUnits = verify -- TODO: uncurry (&&) . both verify . partitionDims
+verifyUnits = {-verify-} uncurry (&&) . both verify . partitionDims
   where
     verify :: Units -> Bool
     verify = all (== 1) . foldDims reduce mempty . snd . baseUnits

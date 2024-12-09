@@ -40,7 +40,7 @@ unit thrm "therms" = 100000 BTU;
 unit hp "horsepower" = 550 lbf ft / s;
 
 # pressure units
-#unit psi "pounds of force per square inch" = lbf / in^2;
+unit psi "pounds of force per square inch" = lbf / in^2;
 unit bar "bars" = 100 kPa;
 unit atm "atmospheres" = 101325 Pa;
 
