@@ -13,7 +13,7 @@ import Tn.Unit
 (*%) :: Scalar -> Scalar -> ResultT Scalar
 (*%) x@(Scalar _ Nothing) y = return $ x * y
 (*%) x y@(Scalar _ Nothing) = return $ x * y
-(*%) x@(Scalar _ (Just ux)) y = harmonizeUnits $ x * y
+(*%) x@(Scalar _ (Just _)) y = harmonizeUnits $ x * y
 
 -- convertSharedUnits y ux <&> (x *)
 

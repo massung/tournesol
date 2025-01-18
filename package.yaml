@@ -39,12 +39,13 @@ ghc-options:
   - -Wmissing-home-modules
   - -Wpartial-fields
   - -Wredundant-constraints
+  - -optP-Wno-nonportable-include-path
 
 library:
   source-dirs: src
 
 executables:
-  tn-exe:
+  tn:
     main: Main.hs
     source-dirs: app
     ghc-options:
