@@ -68,10 +68,10 @@ scalarParser :: Parsec String Scope Scalar
 scalarParser = do
   x <- naturalOrFloat lexer
 
-  -- optionally parse denominator
+  -- optionally parse denominator if x is a natural number
   r <- case x of
-    Left n -> option 1 (reservedOp lexer "%" >> integer lexer) <&> (n %)
-    Right n -> return $ toRational n
+    Left n -> option 1 (reservedOp lexer "%" >> integer lexer) <&> fromRational . (n %)
+    Right n -> return n
 
   u <- optionMaybe $ try (unitsParser <|> unitsTerm)
   return $ Scalar r u

@@ -49,9 +49,9 @@ unit day "days" = 24 hr;
 unit week "weeks" = 7 day;
 
 # angle units
-unit deg = 180 / ([pi] : rad);
-unit grad = 360 % 400 deg;
-unit rev = 360 deg;
+unit deg "degrees" = 180 / ([pi] : rad);
+unit grad "gradians" = 360 % 400 deg;
+unit rev "revolutions" = 360 deg;
 
 # rate units
 unit mps "meters per second" = m / s;

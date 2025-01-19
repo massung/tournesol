@@ -38,7 +38,7 @@ instance Show ContextError where
   show ArityMismatch = "arity mismatch"
   show DisparateUnits = "disparate units"
   show DivByZero = "divide by zero"
-  show InvalidExponent = "invalid exponent (non-natural or has units)"
+  show InvalidExponent = "invalid exponent"
   show NoConversion = "no conversion found"
   show TypeMismatch = "type mismatch"
   show (SyntaxError err) =
@@ -85,9 +85,17 @@ shiftLocal = gets arg >>= \(x, st) -> do put st; return x
 
 -- Converting units uses the following algorithm:
 --
---   1. Convert to base units
---   2. Convert between base units using the conversion graph
---   3. Convert from base units to the desired units
+--   1. Partition the units in the numerator and denominator
+--   2. Harmonize numerator units (e.g "ft min" -> "in min")
+--   3. Harmonize denominator units
+--   4. Multiply original scalar (without units) with harmonized scalars
+--
+-- For multiplication and division, the process is done. For addition,
+-- subtraction, and pure unit conversion, we need to ensure that the
+-- units are identical for both sides of the equation.
+--
+-- The numerator and denominator are harmonized separately, otherwise
+-- some units are impossible to represent (e.g., PSI).
 
 buildConv :: [(Unit, Unit, Int)] -> ResultT (Maybe Conv)
 buildConv m = do
@@ -98,63 +106,37 @@ buildConv m = do
     Just (c : cs) -> return $ Just (foldl' (<>) c cs)
     _ -> return Nothing
 
-harmonizeUnits :: Scalar -> ResultT Scalar
-harmonizeUnits s@(Scalar _ Nothing) = return s
-harmonizeUnits s@(Scalar x (Just u)) = do
-  case uncurry unitsToConv $ swap (partitionDims u) of
-    [] -> return s
+convertPartitionedUnits :: Units -> Units -> ResultT Scalar
+convertPartitionedUnits from to = do
+  let (rx, from') = baseUnits from
+  let (ry, to') = baseUnits to
+
+  case unitsToConv from' to' of
+    [] -> return $ Scalar (rx / ry) (Just to)
     convs ->
       buildConv convs >>= \case
-        Just conv -> return $ Scalar (applyConv x conv) (Just $ convUnits convs u)
-        _ -> throw NoConversion
+        Just conv -> return $ Scalar (applyConv rx conv / ry) (Just to)
+        _ -> throwError NoConversion
 
-convertPartitionedUnits :: Rational -> Units -> Units -> ResultT Scalar
-convertPartitionedUnits x ux uy =
-  let (rx, ux') = baseUnits ux
-      (ry, uy') = baseUnits uy
+harmonizeUnits :: Scalar -> Units -> ResultT Scalar
+harmonizeUnits x@(Scalar _ Nothing) _ = return x
+harmonizeUnits x@(Scalar _ (Just ux)) uy = do
+  let (nx, dx) = partitionDims ux
+  let (ny, dy) = partitionDims uy
 
-      -- find the conversion from ux' -> uy'
-      toConv = unitsToConv ux' uy'
-   in if null toConv
-        then return $ Scalar (x * rx / ry) (Just uy)
-        else
-          buildConv toConv >>= \case
-            Just conv -> return $ Scalar (applyConv (x * rx) conv / ry) (Just uy)
-            _ -> throwError NoConversion
+  -- harmonize the units of the numerator and denominator
+  nx' <- convertPartitionedUnits nx ny
+  dx' <- convertPartitionedUnits dx dy
+
+  -- join the results together
+  return $ dropUnits x * (nx' * dx')
 
 convertToUnits :: Scalar -> Units -> ResultT Scalar
 convertToUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
-convertToUnits (Scalar x (Just ux)) uy =
-  if baseDims ux /= baseDims uy
-    then throwError DisparateUnits
-    else
-      let (nx, dx) = partitionDims ux
-          (ny, dy) = partitionDims uy
-       in do
-            -- perform the conversion of the numerator then denominator
-            (Scalar x' n') <- convertPartitionedUnits x nx ny
-            (Scalar x'' d') <- convertPartitionedUnits x' dx dy
+convertToUnits x@(Scalar _ _) uy = do
+  x' <- harmonizeUnits x uy
 
-            -- join the resulting units together
-            return $ Scalar x'' (n' <> d')
-
--- convertSharedUnits :: Scalar -> Units -> ResultT Scalar
--- convertSharedUnits (Scalar x Nothing) uy = return $ Scalar x (Just uy)
--- convertSharedUnits (Scalar x (Just ux)) uy = do
---   x@(Scalar _ ux') <- harmonizeUnits (Scalar x (Just $ ux <> uy))
-
---   -- convert numerator and denominator
---   let (nx, dx) = partitionDims $ fromJust ux'
---       (ny, dy) = partitionDims uy
-
---       -- get shared units to convert for both numerator and denominator
---       nConv = unitsToConv nx ny
---       dConv = unitsToConv dx dy
---    in doConv nConv x >>= doConv dConv
---   where
---     doConv :: [(Unit, Unit, Int)] -> Scalar -> ResultT Scalar
---     doConv [] x = return x
---     doConv convs (Scalar x u) =
---       buildConv convs >>= \case
---         Just conv -> return $ Scalar (applyConv x conv) (convUnits convs <$> u)
---         _ -> throw NoConversion
+  -- ensure the desired units exactly match
+  if scalarUnits x' == Just uy
+    then return x'
+    else throwError DisparateUnits

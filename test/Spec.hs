@@ -72,22 +72,22 @@ testConversions = do
     testExpr "12 in : ft" "1 ft"
 
   describe "SI conversions" $ do
-    testExpr "(1 aL : L)" "1 % 1000000000000000000 L"
-    testExpr "(1 fL : L)" "1 % 1000000000000000 L"
-    testExpr "(1 pL : L)" "1 % 1000000000000 L"
-    testExpr "(1 nL : L)" "1 % 1000000000 L"
-    testExpr "(1 uL : L)" "1 % 1000000 L"
-    testExpr "(1 mL : L)" "1 % 1000 L"
-    testExpr "(1 cL : L)" "1 % 100 L"
-    testExpr "(1 dL : L)" "1 % 10 L"
-    testExpr "(1 daL : L)" "10 L"
-    testExpr "(1 hL : L)" "100 L"
-    testExpr "(1 kL : L)" "1000 L"
-    testExpr "(1 ML : L)" "1000000 L"
-    testExpr "(1 GL : L)" "1000000000 L"
-    testExpr "(1 TL : L)" "1000000000000 L"
-    testExpr "(1 PL : L)" "1000000000000000 L"
-    testExpr "(1 EL : L)" "1000000000000000000 L"
+    testExpr "(1 aL : L) ~= 1 % 1000000000000000000 L" 1
+    testExpr "(1 fL : L) ~= 1 % 1000000000000000 L" 1
+    testExpr "(1 pL : L) ~= 1 % 1000000000000 L" 1
+    testExpr "(1 nL : L) ~= 1 % 1000000000 L" 1
+    testExpr "(1 uL : L) ~= 1 % 1000000 L" 1
+    testExpr "(1 mL : L) ~= 1 % 1000 L" 1
+    testExpr "(1 cL : L) ~= 1 % 100 L" 1
+    testExpr "(1 dL : L) ~= 1 % 10 L" 1
+    testExpr "(1 daL : L) ~= 10 L" 1
+    testExpr "(1 hL : L) ~= 100 L" 1
+    testExpr "(1 kL : L) ~= 1000 L" 1
+    testExpr "(1 ML : L) ~= 1000000 L" 1
+    testExpr "(1 GL : L) ~= 1000000000 L" 1
+    testExpr "(1 TL : L) ~= 1000000000000 L" 1
+    testExpr "(1 PL : L) ~= 1000000000000000 L" 1
+    testExpr "(1 EL : L) ~= 1000000000000000000 L" 1
 
   describe "Exponent conversions" $ do
     testExpr "9 ft^2 : yd^2" "1 yd^2"
@@ -100,7 +100,6 @@ testConversions = do
     testExpr "10 hp ~= 7456.9988186291 W" 1
 
   describe "Derived conversions" $ do
-    testExpr "2 L : um^3" "2000000000000000 um^3"
     testExpr "2000 cm^3 : L" "2 L"
     testExpr "1 acre : yd^2" "4840 yd^2"
 

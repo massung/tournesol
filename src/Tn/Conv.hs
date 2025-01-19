@@ -16,8 +16,8 @@ type ConvGraph = AdjacencyMap (Maybe Conv) Unit
 -- For example, the conversions from m -> cm and cm -> m are:
 --
 --   Conv m (* 100)
---   Conv cm (/ 1000)
-data Conv = Conv Unit (Rational -> Rational)
+--   Conv cm (/ 100)
+data Conv = Conv Unit (Double -> Double)
 
 instance Eq Conv where
   (==) (Conv a _) (Conv b _) = a == b
@@ -32,17 +32,17 @@ instance Semigroup Conv where
   (<>) (Conv to f) (Conv _ g) = Conv to (f . g)
 
 -- apply a conversion function
-applyConv :: Rational -> Conv -> Rational
+applyConv :: Double -> Conv -> Double
 applyConv n (Conv _ f) = f n
 
 -- create a pair of linear conversions
-linearConvs :: Unit -> Unit -> Rational -> ConvGraph
+linearConvs :: Unit -> Unit -> Double -> ConvGraph
 linearConvs from to r =
   let a = edge (Just $ Conv to (/ r)) from to
       b = edge (Just $ Conv from (* r)) to from
    in overlay a b
 
-derivedConvs :: [(String, String, Rational)] -> Unit -> ConvGraph
+derivedConvs :: [(String, String, Double)] -> Unit -> ConvGraph
 derivedConvs prefixes u = overlays $ fmap convs prefixes
   where
     convs (_, p, r) = linearConvs u (unitWithPrefix u p r) r

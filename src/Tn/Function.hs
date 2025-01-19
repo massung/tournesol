@@ -29,8 +29,8 @@ mapArgs (x : xs) (arg : args) = do
 shiftArg :: Scalar -> ArgType -> ResultT Scalar
 shiftArg x Any = return x
 shiftArg x@(Scalar _ Nothing) Untyped = return x
-shiftArg x@(Scalar i Nothing) UntypedInteger =
-  if denominator i == 1
+shiftArg x@(Scalar n Nothing) UntypedInteger =
+  if snd (properFraction n :: (Integer, Double)) == 0
     then return x
     else throwError TypeMismatch
 shiftArg x (Typed u) = convertToUnits x u

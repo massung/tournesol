@@ -26,6 +26,7 @@ dependencies:
   - extra
   - file-embed
   - haskeline
+  - logfloat
   - parsec
   - safe
   - streamly

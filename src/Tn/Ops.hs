@@ -13,7 +13,7 @@ import Tn.Unit
 (*%) :: Scalar -> Scalar -> ResultT Scalar
 (*%) x@(Scalar _ Nothing) y = return $ x * y
 (*%) x y@(Scalar _ Nothing) = return $ x * y
-(*%) x@(Scalar _ (Just _)) y = harmonizeUnits $ x * y
+(*%) x@(Scalar _ (Just ux)) y = harmonizeUnits y ux <&> (x *)
 
 -- convertSharedUnits y ux <&> (x *)
 
@@ -28,12 +28,9 @@ import Tn.Unit
 (^%) _ 0 = return 1
 (^%) x 1 = return x
 (^%) _ (Scalar _ (Just _)) = throwError InvalidExponent
-(^%) (Scalar x ux) (Scalar y _) =
-  if denominator y /= 1
-    then throwError InvalidExponent
-    else
-      let n = fromInteger $ numerator y
-       in return $ Scalar (x ^^ n) (fmap (*^ n) ux)
+(^%) (Scalar x ux) (Scalar y _) = case properFraction y of
+  (n, 0) -> return $ Scalar (x ^^ n) (fmap (*^ n) ux)
+  _ -> throwError InvalidExponent
 
 (<=>%) :: Scalar -> Scalar -> ResultT Scalar
 (<=>%) x y = x -% y <&> signum
@@ -60,10 +57,8 @@ import Tn.Unit
 (>%) x y = x <=>% y <&> fromIntegral . fromEnum . (> 0)
 
 sqrtScalar :: Scalar -> ResultT Scalar
-sqrtScalar (Scalar x u) = mapM root u <&> Scalar x'
+sqrtScalar (Scalar x u) = mapM root u <&> Scalar (sqrt x)
   where
-    x' = toRational . sqrt $ (fromRational x :: Double)
-
     root :: Units -> ResultT Units
     root u'@(Dims m) =
       if all ((== 0) . (.&. 1)) m

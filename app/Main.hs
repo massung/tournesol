@@ -69,7 +69,9 @@ printFormat :: Opts -> Scalar -> String
 printFormat opts (Scalar x _) = printf "%%0.%d%s" sigfigs notation
   where
     sigfigs :: Int
-    sigfigs = if denominator x == 1 then 0 else fromMaybe 2 opts.precision
+    sigfigs = case (properFraction x :: (Integer, Double)) of
+      (_, 0) -> 0
+      (_, _) -> fromMaybe 2 opts.precision
 
     notation :: String
     notation = if opts.sciNotation then "g" else "f"

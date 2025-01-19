@@ -149,12 +149,12 @@ unitConv name = do
   -- add to the scope
   either fail (putState . declConvs g) $ declUnit u scope
   where
-    makeSimpleConvTo :: Unit -> Int -> Base -> Rational -> (Unit, ConvGraph)
+    makeSimpleConvTo :: Unit -> Int -> Base -> Double -> (Unit, ConvGraph)
     makeSimpleConvTo to 1 base r = let u = Unit name base in (u, linearConvs u to $ recip r)
     makeSimpleConvTo to (-1) base r = let u = Unit name base in (u, linearConvs u to r)
     makeSimpleConvTo to n _ r = makeDerivedConvTo [(to, n)] r
 
-    makeDerivedConvTo :: Units -> Rational -> (Unit, ConvGraph)
+    makeDerivedConvTo :: Units -> Double -> (Unit, ConvGraph)
     makeDerivedConvTo to r = (Unit name $ Derived r to, G.empty)
 
 functionDecl :: Parsec String Scope ()

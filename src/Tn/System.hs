@@ -8,27 +8,27 @@ data System
   | Binary
   deriving (Eq, Show)
 
-siPrefixes :: [(String, String, Rational)]
+siPrefixes :: [(String, String, Double)]
 siPrefixes =
-  [ ("atto", "a", 1 % 1000000000000000000),
-    ("femto", "f", 1 % 1000000000000000),
-    ("pico", "p", 1 % 1000000000000),
-    ("nano", "n", 1 % 1000000000),
-    ("micro", "u", 1 % 1000000),
-    ("milli", "m", 1 % 1000),
-    ("centi", "c", 1 % 100),
-    ("deci", "d", 1 % 10),
-    ("deca", "da", 10),
-    ("hecto", "h", 100),
-    ("kilo", "k", 1000),
-    ("mega", "M", 1000000),
-    ("giga", "G", 1000000000),
-    ("tera", "T", 1000000000000),
-    ("peta", "P", 1000000000000000),
-    ("exa", "E", 1000000000000000000)
+  [ ("atto", "a", 1e-18),
+    ("femto", "f", 1e-15),
+    ("pico", "p", 1e-12),
+    ("nano", "n", 1e-9),
+    ("micro", "u", 1e-6),
+    ("milli", "m", 1e-3),
+    ("centi", "c", 1e-2),
+    ("deci", "d", 1e-1),
+    ("deca", "da", 1e1),
+    ("hecto", "h", 1e2),
+    ("kilo", "k", 1e3),
+    ("mega", "M", 1e6),
+    ("giga", "G", 1e9),
+    ("tera", "T", 1e12),
+    ("peta", "P", 1e15),
+    ("exa", "E", 1e18)
   ]
 
-binaryPrefixes :: [(String, String, Rational)]
+binaryPrefixes :: [(String, String, Double)]
 binaryPrefixes =
   [ ("kilo", "k", 1024),
     ("mega", "M", 1048576),

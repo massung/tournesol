@@ -12,7 +12,7 @@ data Unit = Unit Symbol Base
 
 data Base
   = Base Symbol
-  | Derived Rational Units
+  | Derived Double Units
   deriving (Eq, Show)
 
 type Units = Dims Unit
@@ -31,7 +31,7 @@ instance Show Unit where
   show (Unit u _) = show u
 
 -- create a new unit with the same base
-unitWithPrefix :: Unit -> String -> Rational -> Unit
+unitWithPrefix :: Unit -> String -> Double -> Unit
 unitWithPrefix (Unit sym base) prefix r =
   Unit (intern $ prefix <> unintern sym) $ case base of
     Derived r' units -> Derived (r' * r) units
@@ -46,10 +46,10 @@ baseDims = foldDims reduce mempty
     reduce dims (Unit _ (Derived _ u')) e = dims <> baseDims u' *^ e
 
 -- returns the base units and linear conversion scale
-baseUnits :: Units -> (Rational, Units)
+baseUnits :: Units -> (Double, Units)
 baseUnits = foldDims reduce (1, mempty)
   where
-    reduce :: (Rational, Units) -> Unit -> Int -> (Rational, Units)
+    reduce :: (Double, Units) -> Unit -> Int -> (Double, Units)
     reduce (r, units) u@(Unit _ (Base _)) e = (r, units <> [(u, e)])
     reduce (r, units) (Unit _ (Derived f u')) e =
       let (r', units') = baseUnits (u' *^ e)
